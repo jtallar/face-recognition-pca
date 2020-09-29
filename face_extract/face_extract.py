@@ -69,7 +69,7 @@ for i in range(0, len(faces)):
 	cv2.imshow("Face x", faces[i])
 	cv2.waitKey(0)
 
-# convert matrix to vector and save to a sepparated file
+# convert matrix to vector and save to a separated file
 for i in range(0, len(faces)):
 	np.save(args["output"] + "/v-face-" + str(i) + ".npy", faces[i].flatten())
 
