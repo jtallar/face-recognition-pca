@@ -16,7 +16,13 @@ pip3 install opencv-python
 ```
 
 ```bash
+# generic example how to run
 python3 face_extract.py --image path/to/image.jpeg --prototxt path/to/file.prototxt --model path/to/file.caffemodel --confidence 0.2
+```
+
+```bash
+# specific example, run inside mna-tpe1
+python3 face_extract/face_extract.py --image image_samples/foto2.jpeg --prototxt face_extract/deploy.prototxt --model face_extract/res10_300x300_ssd_iter_140000.caffemodel --confidence 0.2
 ```
 
 
