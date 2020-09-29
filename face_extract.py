@@ -55,8 +55,8 @@ for i in range(0, detections.shape[2]):
 		# probability
 		text = "{:.2f}%".format(confidence * 100)
 		y = startY - 10 if startY - 10 > 10 else startY + 10
-		# extract face from image, sized at 50x50
-		faces.append(cv2.resize(image[startY:endY, startX:endX], (50,50)))
+		# extract face from image, sized at 50x50		
+		faces.append(cv2.resize(cv2.cvtColor(image[startY:endY, startX:endX], cv2.COLOR_BGR2GRAY), (50,50)))
 		# cv2.rectangle(image, (startX, startY), (endX, endY),
 		# 	(0, 0, 255), 2)
 		# cv2.putText(image, text, (startX, y),
