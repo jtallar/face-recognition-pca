@@ -17,6 +17,8 @@ ap.add_argument("-m", "--model", required=True,
 	help="path to Caffe pre-trained model")
 ap.add_argument("-c", "--confidence", type=float, default=0.5,
 	help="minimum probability to filter weak detections")
+ap.add_argument("-o", "--output", default=".", 
+	help="path to save the resulting files")
 args = vars(ap.parse_args())
 
 # load our serialized model from disk
@@ -62,11 +64,14 @@ for i in range(0, detections.shape[2]):
 		# cv2.putText(image, text, (startX, y),
 		# 	cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
 
-# show the output image
-# cv2.imshow("Output", image)
-# cv2.waitKey(0)
-
 # print faces extracted from image
 for i in range(0, len(faces)):
 	cv2.imshow("Face x", faces[i])
 	cv2.waitKey(0)
+
+# convert matrix to vector and save to a sepparated file
+for i in range(0, len(faces)):
+	np.save(args["output"] + "/v-face-" + str(i) + ".npy", faces[i].flatten())
+
+# example how to load the data from a npy file
+print(np.load(args["output"] + "/v-face-0.npy"))
