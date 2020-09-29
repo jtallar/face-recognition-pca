@@ -6,6 +6,7 @@
 import numpy as np
 import argparse
 import cv2
+import os
  
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -69,9 +70,16 @@ for i in range(0, len(faces)):
 	cv2.imshow("Face x", faces[i])
 	cv2.waitKey(0)
 
+
+files_count = len(os.listdir(args["output"] + "/"))
 # convert matrix to vector and save to a separated file
-for i in range(0, len(faces)):
-	np.save(args["output"] + "/v-face-" + str(i) + ".npy", faces[i].flatten())
+for i in range(files_count, files_count + len(faces)):
+	np.save(args["output"] + "/v-face-" + str(i) + ".npy", faces[i - files_count].flatten())
 
 # example how to load the data from a npy file
 print(np.load(args["output"] + "/v-face-0.npy"))
+
+
+
+
+

@@ -22,7 +22,7 @@ python3 face_extract.py --image path/to/image.jpeg --prototxt path/to/file.proto
 
 ```bash
 # specific example, run inside mna-tpe1
-python3 face_extract/face_extract.py --image image_samples/foto2.jpeg --prototxt face_extract/deploy.prototxt --model face_extract/res10_300x300_ssd_iter_140000.caffemodel --confidence 0.2 --output face_extract
+python3 face_extract/face_extract.py --image image_samples/foto2.jpeg --prototxt face_extract/deploy.prototxt --model face_extract/res10_300x300_ssd_iter_140000.caffemodel --confidence 0.2 --output data/v-faces
 ```
 
 
