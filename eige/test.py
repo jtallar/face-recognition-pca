@@ -1,5 +1,4 @@
 import numpy as np
-import rref
 
 def rref(B, tol=1e-8):
   A = B.copy()
@@ -44,33 +43,40 @@ def rref(B, tol=1e-8):
       break
   return A
 
-A = np.mat("1 2 3; 4 5 6; 7 4 9")
+A = np.mat("4 1 1; 2 -1 0; 1 2 0")
 print("A: \n", A)
 eigenvalue,eigenvector = np.linalg.eig(A)
 
 # print("Charpoly of B: \n", np.poly(A))
 roots = np.roots(np.poly(A))
 # print("Roots of charpoly: \n", roots)
-# print("\nReal Eigenvalues of B: \n", np.diag(eigenvalue))
-print("\nManual Eigenvalues of B: \n", np.diag(roots))
-# C = np.mat("1 2; 4 5")
-# print("Char poly C", np.poly(C))
+print("\nReal Eigenvalues of A: \n", np.diag(eigenvalue))
+print("\nManual Eigenvalues of A: \n", np.diag(roots))
+    
+print("\nReal Eigenvectors of A: \n", eigenvector)
 
-# print("eige 1: ", roots[0])
+v = []
+N = A[0].size
+for i in range(N):
+    si = roots[i]
+    Atilde = (A - si * np.identity(N))
+    Atilde_red = rref(Atilde)
+    out1 = -Atilde_red[:, N-1][0].tolist()[0][0]
+    out2 = -Atilde_red[:, N-1][1].tolist()[0][0]
+    res = np.array([out1, out2, 1])
+    res = res / np.linalg.norm(res)
+    v = np.concatenate((v, res), axis=0)
 
-s1 = roots[0]
-Atilde = (A - s1 * np.identity(3))
-Atilde_red = rref(Atilde)
-print("\nAtilde_red: \n",Atilde_red)
-# res = Atilde_red[1][1]
+# print(v)
+v = v.reshape((N,N))
+v = np.transpose(v)
+print("\nManual Eigenvectors of A: \n", v)
 
-out1 = -Atilde_red[:, 2][0].tolist()[0][0]
-out2 = -Atilde_red[:, 2][1].tolist()[0][0]
-
-res = np.array([out1, out2, 1])
-
-print(res)
-# v1 = np.mat(-Atilde_red(1:(N-1),N); 1)
-
-# Ared, pivots, row = rref(A)
-# print("Ared = \n", Ared)
+# s1 = roots[0]
+# Atilde = (A - s1 * np.identity(3))
+# Atilde_red = rref(Atilde)
+# print("\nAtilde_red: \n",Atilde_red)
+# out1 = -Atilde_red[:, 2][0].tolist()[0][0]
+# out2 = -Atilde_red[:, 2][1].tolist()[0][0]
+# res = np.array([out1, out2, 1])
+# print(res)
