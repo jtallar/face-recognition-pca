@@ -69,20 +69,3 @@ for i in range(0, detections.shape[2]):
 for i in range(0, len(faces)):
 	cv2.imshow("Face x", faces[i])
 	cv2.waitKey(0)
-
-
-files_count = len(os.listdir(args["output"] + "/"))
-print(datetime.timestamp)
-# convert matrix to vector and save to a separated file
-for i in range(files_count, files_count + len(faces)):
-	np.save(args["output"] + "/v-face-" + str(i) + ".npy", faces[i - files_count].flatten())
-
-	
-
-# example how to load the data from a npy file
-print(np.load(args["output"] + "/v-face-0.npy"))
-
-
-
-
-
