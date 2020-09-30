@@ -2,7 +2,7 @@
 import numpy as np
 import argparse
 import cv2
-import os
+import library as l
  
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--image", required=True,
@@ -36,8 +36,6 @@ for i in range(0, detections.shape[2]):
 for i in range(0, len(faces)):
 	cv2.imshow("Face x", faces[i])
 	cv2.waitKey(0)
-
-import library as l
 
 dir = './data'
 
