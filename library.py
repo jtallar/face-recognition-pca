@@ -26,23 +26,23 @@ def save_face(face, name, dir):
 
 
 # creates the matrix A for eigenvals to calculate later
-# also saves the mean for later use
+# also saves the mean and index list for later use
 # dir, the path to the database
-# returns (A, index), with index being the dirs of all the indexes
 def create_A(dir):
     # create the matrix a transposed
     a = []
     index = []
-    for face in glob.glob(dir + '/persons/*/faces/*.npy'):
+    for face in glob.glob(dir + '/persons/*/*.npy'):
         a.append(np.load(face))
         index.append(face)
     
-    # calculates mean between rows and saves
+    # calculates mean between rows and saves mean and index
     m = np.mean(a, axis=0)
     np.save(dir + '/mean', m)
+    np.save(dir + '/index', index)
     
     # substracts to each row the mean and returns transposed
-    return (np.transpose(np.subtract(a, m)), index)
+    return np.transpose(np.subtract(a, m))
 
 
 # calculates the eigenvalues and eigenvectos given a matrix
@@ -63,6 +63,11 @@ def calculate_eigen(a, dir):
     np.save(dir + '/eigenvalues', s)
     return (u, s)
 
+# fi is an N^2 vector, Fi = ri - Y
+# eigenvectors is an N^2 x K, the K best eigenvectors
+# returns omh = K vector with K weights
+def calculate_weights(fi, eigenvectors):
+    return np.dot(np.transpose(eigenvectors), fi)
 
 # creates and saces the ohm space
 # a the A matrix N^2 x M
@@ -74,7 +79,7 @@ def create_ohm_space(a, u, dir):
 
     # for each col get the weights
     for i in range(0, len(a[0])):
-        ohmi = np.dot(np.transpose(u), np.transpose(a)[i])
+        ohmi = calculate_weights(np.transpose(a)[i], u)
         o.append(ohmi)
 
     # calculate ohm space and save
@@ -99,12 +104,16 @@ def vector_distance(ohm1, ohm2, eigenvalues):
     return sum
 
 # ohm is a K vector with K weights from a particular image
-# ohm_space is a K x M matrix with each individual ohm vector
-#  in each column
+# dir the path for the ohm space and eigenvalues
 # threshold is the max distance to recognize image
 # returns image number recognized (minimum vector distance) 
 #  or -1 if unknown
-def face_space_distance(ohm_img, ohm_space, eigenvalues, threshold=float('Inf')):
+def face_space_distance(ohm_img, dir, threshold=float('Inf')):
+
+    ohm_space = np.load(dir + '/ohm-space.npy')
+    eigenvalues = np.load(dir + '/eigenvalues.npy')
+
+
     index = -1
     min_err = float('Inf')
     for i in range(0, len(ohm_space[0])):
@@ -114,3 +123,28 @@ def face_space_distance(ohm_img, ohm_space, eigenvalues, threshold=float('Inf'))
             min_err = dist
     print("Min error ",min_err)
     return index
+
+
+# given an image and a dir calculates its ohm
+# face the matrix of the image
+# dir the direction of the mean and eigenvector to load
+def get_ohm_image(face, dir):
+
+    # loads mean already calculated and eigenvector
+    m = np.load(dir + '/mean.npy')
+    u = np.load(dir + '/eigenvector.npy')
+
+    # substracts and returns the calculated weights
+    return calculate_weights(np.subtract(face.flatten(), m), u)
+
+# loads and gets the path of the index list
+# index the index that matched the face
+# dir the path to the list of indexes
+def get_matching_path(index, dir):
+
+    # loads the index list of the persons
+    dir_list = np.load(dir + '/index.npy')
+
+    # returns the corresponding path
+    return dir_list[index]
+
