@@ -80,3 +80,22 @@ print("\nManual Eigenvectors of A: \n", v)
 # out2 = -Atilde_red[:, 2][1].tolist()[0][0]
 # res = np.array([out1, out2, 1])
 # print(res)
+
+
+
+
+v = []
+N = A[0].size
+for i in range(N):
+    si = roots[i]
+    Atilde = (A - si * np.identity(N))
+    Atilde_red = rref(Atilde)
+    res = []
+    for k in range(N-1):
+        aux = -Atilde_red[:, N-1][k].tolist()[0][0]
+        res[k]=aux
+    # out1 = -Atilde_red[:, N-1][0].tolist()[0][0]
+    # out2 = -Atilde_red[:, N-1][1].tolist()[0][0]
+    res[N] = 1
+    res = res / np.linalg.norm(res)
+    v = np.concatenate((v, res), axis=0)
