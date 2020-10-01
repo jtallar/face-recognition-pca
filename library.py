@@ -118,6 +118,69 @@ def calculate_eigen(a, dir):
     return (u, s)
 
 
+def rref(B, tol=1e-8):
+  A = B.copy()
+  rows, cols = A.shape
+  r = 0
+  pivots_pos = []
+  row_exchanges = np.arange(rows)
+  for c in range(cols):
+
+    ## Find the pivot row:
+    pivot = np.argmax (np.abs (A[r:rows,c])) + r
+    m = np.abs(A[pivot, c])
+    if m <= tol:
+      ## Skip column c, making sure the approximately zero terms are
+      ## actually zero.
+      A[r:rows, c] = np.zeros(rows-r)
+    else:
+      ## keep track of bound variables
+      pivots_pos.append((r,c))
+
+      if pivot != r:
+        ## Swap current row and pivot row
+        A[[pivot, r], c:cols] = A[[r, pivot], c:cols]
+        row_exchanges[[pivot,r]] = row_exchanges[[r,pivot]]
+        
+      ## Normalize pivot row
+      A[r, c:cols] = A[r, c:cols] / A[r, c]
+
+      ## Eliminate the current column
+      v = A[r, c:cols]
+      ## Above (before row r):
+      if r > 0:
+        ridx_above = np.arange(r)
+        A[ridx_above, c:cols] = A[ridx_above, c:cols] - np.outer(v, A[ridx_above, c]).T
+      ## Below (after row r):
+      if r < rows-1:
+        ridx_below = np.arange(r+1,rows)
+        A[ridx_below, c:cols] = A[ridx_below, c:cols] - np.outer(v, A[ridx_below, c]).T
+      r += 1
+    ## Check if done
+    if r == rows:
+      break
+  return A
+
+def manual_eigen(a, dir, k=a[0].size):
+    s = np.roots(np.poly(a))
+    N = a[0].size
+    vector = np.empty((N,0))
+    for i in range(N):
+        si = s[i]
+        Atilde = (a - si * np.identity(N))
+        Atilde_red = rref(Atilde)
+        res = []
+        for j in range(N-1):
+            res.append(-Atilde_red[:, N-1][j].tolist()[0][0])
+        res.append(1) 
+        res = res / np.linalg.norm(res)
+        vector = np.append(vector, np.array([res]).transpose(), axis=1)
+    u = vector[:,:k]
+    # saves to files the eigen values and vectors
+    np.save(os.path.join(dir, 'eigenvector'), u)
+    np.save(os.path.join(dir, 'eigenvalues'), s)
+    return (u, s)
+
 # fi is an N^2 vector, Fi = ri - Y
 # eigenvectors is an N^2 x K, the K best eigenvectors
 # returns omh = K vector with K weights
