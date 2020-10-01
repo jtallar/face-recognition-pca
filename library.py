@@ -178,6 +178,7 @@ def manual_eigen(b, dir, k):
         res = res / np.linalg.norm(res)                                     # vi = vi / ||vi||
         vector = np.append(vector, np.array([res]).transpose(), axis=1)     # append on final v 
     u = vector[:,:k]                                                        # get first k columns
+    s = s[:k]
     # saves to files the eigen values and vectors
     np.save(os.path.join(dir, 'eigenvector'), u)
     np.save(os.path.join(dir, 'eigenvalues'), s)
