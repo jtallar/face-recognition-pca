@@ -117,7 +117,6 @@ def calculate_eigen(a, dir):
     np.save(os.path.join(dir, 'eigenvalues'), s)
     return (u, s)
 
-
 def rref(B, tol=1e-8):
   A = B.copy()
   rows, cols = A.shape
@@ -161,21 +160,24 @@ def rref(B, tol=1e-8):
       break
   return A
 
-def manual_eigen(a, dir, k=a[0].size):
-    s = np.roots(np.poly(a))
-    N = a[0].size
-    vector = np.empty((N,0))
+# algorithm that calculates eigenvalues and eigenvectors given matrix a
+# return eigenvalues and k eigenvectors 
+def manual_eigen(b, dir, k):
+    a = np.dot(np.transpose(b), b)              # a = A'A
+    s = np.roots(np.poly(a))                    # roots of characteristic polynom
+    N = a[0].size                               # set N as matrix size
+    vector = np.empty((N,0))                    # initialize result vectors matrix
     for i in range(N):
-        si = s[i]
-        Atilde = (a - si * np.identity(N))
-        Atilde_red = rref(Atilde)
+        si = s[i]                               # get i-th eigenvalue from s
+        Atilde = (a - si * np.identity(N))      # A' = (A - Lambda i * Id)
+        Atilde_red = rref(Atilde)               # A'red --> Gauss-Jordan
         res = []
         for j in range(N-1):
-            res.append(-Atilde_red[:, N-1][j].tolist()[0][0])
-        res.append(1) 
-        res = res / np.linalg.norm(res)
-        vector = np.append(vector, np.array([res]).transpose(), axis=1)
-    u = vector[:,:k]
+            res.append(-Atilde_red[:, N-1][j].tolist()[0][0])               # build res
+        res.append(1)                                                       # last value = 1
+        res = res / np.linalg.norm(res)                                     # vi = vi / ||vi||
+        vector = np.append(vector, np.array([res]).transpose(), axis=1)     # append on final v 
+    u = vector[:,:k]                                                        # get first k columns
     # saves to files the eigen values and vectors
     np.save(os.path.join(dir, 'eigenvector'), u)
     np.save(os.path.join(dir, 'eigenvalues'), s)
