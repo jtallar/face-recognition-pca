@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import os
 import glob
+import sympy
 
 # given a a base dir for the model and the image returns
 # list of matrix. Each matrix is a face
@@ -104,8 +105,8 @@ def create_A(dir):
 # TODO to be replaced with our function
 def calculate_eigen(a, dir):
     u, s, vh = np.linalg.svd(np.dot(np.transpose(a), a), full_matrices=True)
+    
     # u --> eigenvectors in 3 x 3 matrix, s --> eigenvalues in vector
-   
     u = np.dot(a, u)
     for i in range(0, len(u[0])):
         u[:,i] = np.transpose(np.array(u[:,i]/np.linalg.norm(u[:,i], 2)))
@@ -165,18 +166,30 @@ def rref(B, tol=1e-8):
 def manual_eigen(b, dir, k):
     a = np.dot(np.transpose(b), b)              # a = A'A
     s = np.roots(np.poly(a))                    # roots of characteristic polynom
-    N = a[0].size                               # set N as matrix size
-    vector = np.empty((N,0))                    # initialize result vectors matrix
+    N = len(a)                                  # set N as matrix size
+    vector = []                    # initialize result vectors matrix
     for i in range(N):
-        si = s[i]                               # get i-th eigenvalue from s
-        Atilde = (a - si * np.identity(N))      # A' = (A - Lambda i * Id)
-        Atilde_red = rref(Atilde)               # A'red --> Gauss-Jordan
+
+        # get i-th eigenvalue from s AND A' = (A - Lambda i * Id)
+        aux = sympy.Matrix(a - s[i] * np.identity(N)).rref(iszerofunc=lambda x: abs(x)<1e-16)
+        Atilde_red = np.array(aux[0].tolist(), dtype=float)
+        # rref(a - s[i] * np.identity(N))               # A'red --> Gauss-Jordan
+        print('atilde red')
+        print(Atilde_red)
         res = []
         for j in range(N-1):
-            res.append(-Atilde_red[:, N-1][j].tolist()[0][0])               # build res
-        res.append(1)                                                       # last value = 1
-        res = res / np.linalg.norm(res)                                     # vi = vi / ||vi||
-        vector = np.append(vector, np.array([res]).transpose(), axis=1)     # append on final v 
+            res.append(-Atilde_red[j][N-1])             # build res
+        res.append(1)                                   # last value = 1
+        res = res / np.linalg.norm(res)                 # vi = vi / ||vi||
+        vector.append(res)                              # append on final v
+    
+    vector = np.transpose(vector)
+    vector = np.dot(b, vector)
+    for i in range(0, len(vector[0])):
+        vector[:,i] = np.transpose(np.array(vector[:,i]/np.linalg.norm(vector[:,i], 2)))
+    # u --> eigenvector matrix of the covariance, with ||u||=1
+    # s --> eigenvalues in vector
+
     u = vector[:,:k]                                                        # get first k columns
     s = s[:k]
     # saves to files the eigen values and vectors

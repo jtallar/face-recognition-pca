@@ -11,7 +11,8 @@ args = vars(ap.parse_args())
 A = l.create_A(args['path'])
 
 # calculate and saves eigen values and vectors
-(u, v) = l.manual_eigen(A, args['path'], args['kval'])
+# (u1, v1) = l.manual_eigen(A, args['path'], args['kval'])
+(u2, v2) = l.calculate_eigen(A, args['path'])
 
 # creates and saves the ohm space
-l.create_ohm_space(A, u, args['path'])
+l.create_ohm_space(A, u2, args['path'])
