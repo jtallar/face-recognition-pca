@@ -28,7 +28,8 @@ python3 load.py --path /path/to/data --image path/to/image.jpeg --confidence 0.2
 ```bash
 # makes the required calculation of the already processed data
 # data is the folder, path to the "database"
-python3 calculate.py --path /path/to/data
+# kval is the k values to take from the eigen values and vectors
+python3 calculate.py --path /path/to/data --kval val
 ```
 
 ### 3. Search for matches
