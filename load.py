@@ -11,19 +11,8 @@ args = vars(ap.parse_args())
 # get faces
 faces = l.extract_face(args['path'], args['image'], args['confidence'])
 
-# show all faces and choose one
-print('Look all the faces from the images and select one')
+# save faces
 for face in faces:
     l.show_face(face)
-i = int(input('Insert the index of the face to search: ')) - 1
-
-# recognize the ohm image
-ohm_img = l.get_ohm_image(faces[0], args['path'])
-
-# searches for the index of the matching face
-(i, err) = l.face_space_distance(ohm_img, args['path'])
-print('Error is: ' + str(err))
-
-# gets the corresponding path given the index
-path = l.get_matching_path(i, args['path'])
-print(path)
+    name = input("Enter face name: ")
+    l.save_face(face, name, args['path'])

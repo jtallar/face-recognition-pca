@@ -16,13 +16,27 @@ pip3 install opencv-python
 ```
 
 ```bash
-# generic example how to run
-python3 face_extract.py --image path/to/image.jpeg --prototxt path/to/file.prototxt --model path/to/file.caffemodel --confidence 0.2 --output path/to/save
+# loads to the database the faces on the image
+# data is the folder, path to the "database"
+# image is the path to the image to check
+# confidence value for face detection, optional
+python3 load.py --path /path/to/data --image path/to/image.jpeg --confidence 0.2
 ```
 
+
+### 2. Calculate values
 ```bash
-# specific example, run inside mna-tpe1
-python3 face_extract/face_extract.py --image image_samples/foto2.jpeg --prototxt face_extract/deploy.prototxt --model face_extract/res10_300x300_ssd_iter_140000.caffemodel --confidence 0.2 --output data/v-faces
+# makes the required calculation of the already processed data
+# data is the folder, path to the "database"
+python3 calculate.py --path /path/to/data
 ```
 
+### 3. Search for matches
+```bash
+# given a image checks for coincidences
+# data is the folder, path to the "database"
+# image is the path to the image to check
+# confidence value for face detection, optional
+python3 search.py --path /path/to/data --image /path/to/image.jpeg --confidence val
+```
 

@@ -2,8 +2,55 @@
 # imports used packages
 from pathlib import Path
 import numpy as np
+import cv2
 import os
 import glob
+
+# given a a base dir for the model and the image returns
+# list of matrix. Each matrix is a face
+# dir base path of prototxt and caffemodel
+# image_path the image path
+# conf the confidence factor
+def extract_face(dir, image_path, conf):
+
+    # load serialized model from disk
+    net = cv2.dnn.readNetFromCaffe(os.path.join(dir, 'deploy.prototxt'), os.path.join(dir, 'model.caffemodel'))
+
+    # load the input image and construct an input blob for the image
+    # by resizing to a fixed 300x300 pixels and then normalizing it
+    image = cv2.imread(image_path)
+    (h, w) = image.shape[:2]
+    blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+
+    # pass the blob through the network and obtain the detections and
+    # predictions
+    net.setInput(blob)
+    detections = net.forward()
+    faces = []
+
+    # loop over the detections
+    for i in range(0, detections.shape[2]):
+
+        # extract the confidence (i.e., probability) associated with the prediction
+        confidence = detections[0, 0, i, 2]
+
+        # filter out weak detections by ensuring the `confidence` is
+        # greater than the minimum confidence
+        if confidence > conf:
+
+            # compute the (x, y)-coordinates of the bounding box for the object
+            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+            (startX, startY, endX, endY) = box.astype("int")
+    
+            # draw the bounding box of the face along with the associated probability
+            text = "{:.2f}%".format(confidence * 100)
+            y = startY - 10 if startY - 10 > 10 else startY + 10
+
+            # extract face from image, sized at 50x50		
+            faces.append(cv2.resize(cv2.cvtColor(image[startY:endY, startX:endX], cv2.COLOR_BGR2GRAY), (50,50)))
+    
+    return faces
+
 
 # saves the image given as a matrix in the correspondig dir
 # face is a matrix of N x N 
@@ -22,6 +69,13 @@ def save_face(face, name, dir):
     np.save(path + str(files_count), face.flatten())
 
 
+# shows a face given its matrix
+# waits for the user to press escape
+def show_face(face):
+    cv2.imshow("Face x", face)
+    cv2.waitKey(0)
+    
+
 ##################################################################
 
 
@@ -38,8 +92,8 @@ def create_A(dir):
     
     # calculates mean between rows and saves mean and index
     m = np.mean(a, axis=0)
-    np.save(dir + '/mean', m)
-    np.save(dir + '/index', index)
+    np.save(os.path.join(dir, 'mean'), m)
+    np.save(os.path.join(dir, 'index'), index)
     
     # substracts to each row the mean and returns transposed
     return np.transpose(np.subtract(a, m))
@@ -59,15 +113,17 @@ def calculate_eigen(a, dir):
     # s --> eigenvalues in vector
 
     # saves to files the eigen values and vectors
-    np.save(dir + '/eigenvector', u)
-    np.save(dir + '/eigenvalues', s)
+    np.save(os.path.join(dir, 'eigenvector'), u)
+    np.save(os.path.join(dir, 'eigenvalues'), s)
     return (u, s)
+
 
 # fi is an N^2 vector, Fi = ri - Y
 # eigenvectors is an N^2 x K, the K best eigenvectors
 # returns omh = K vector with K weights
 def calculate_weights(fi, eigenvectors):
     return np.dot(np.transpose(eigenvectors), fi)
+
 
 # creates and saces the ohm space
 # a the A matrix N^2 x M
@@ -84,7 +140,7 @@ def create_ohm_space(a, u, dir):
 
     # calculate ohm space and save
     res = np.transpose(o)
-    np.save(dir + '/ohm-space', res)
+    np.save(os.path.join(dir, 'ohm-space'), res)
     return res
 
 
@@ -103,16 +159,17 @@ def vector_distance(ohm1, ohm2, eigenvalues):
         sum += (ohm1[i] - ohm2[i]) ** 2 / eigenvalues[i]
     return sum
 
+
 # ohm is a K vector with K weights from a particular image
 # dir the path for the ohm space and eigenvalues
 # threshold is the max distance to recognize image
-# returns image number recognized (minimum vector distance) 
-#  or -1 if unknown
+# returns (i, err) being i image number recognized (minimum vector distance) 
+#  or -1 if unknown and err the min error
 def face_space_distance(ohm_img, dir, threshold=float('Inf')):
 
-    ohm_space = np.load(dir + '/ohm-space.npy')
-    eigenvalues = np.load(dir + '/eigenvalues.npy')
-
+    # load ohm space and eigen values
+    ohm_space = np.load(os.path.join(dir, 'ohm-space.npy'))
+    eigenvalues = np.load(os.path.join(dir, 'eigenvalues.npy'))
 
     index = -1
     min_err = float('Inf')
@@ -121,8 +178,7 @@ def face_space_distance(ohm_img, dir, threshold=float('Inf')):
         if (dist < threshold and dist < min_err):
             index = i
             min_err = dist
-    print("Min error ",min_err)
-    return index
+    return (index, min_err)
 
 
 # given an image and a dir calculates its ohm
@@ -131,11 +187,12 @@ def face_space_distance(ohm_img, dir, threshold=float('Inf')):
 def get_ohm_image(face, dir):
 
     # loads mean already calculated and eigenvector
-    m = np.load(dir + '/mean.npy')
-    u = np.load(dir + '/eigenvector.npy')
+    m = np.load(os.path.join(dir, 'mean.npy'))
+    u = np.load(os.path.join(dir, 'eigenvector.npy'))
 
     # substracts and returns the calculated weights
     return calculate_weights(np.subtract(face.flatten(), m), u)
+
 
 # loads and gets the path of the index list
 # index the index that matched the face
@@ -143,7 +200,7 @@ def get_ohm_image(face, dir):
 def get_matching_path(index, dir):
 
     # loads the index list of the persons
-    dir_list = np.load(dir + '/index.npy')
+    dir_list = np.load(os.path.join(dir, 'index.npy'))
 
     # returns the corresponding path
     return dir_list[index]
