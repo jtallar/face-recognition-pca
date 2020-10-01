@@ -49,9 +49,9 @@ eigenvalue,eigenvector = np.linalg.eig(A)
 # print("Charpoly of B: \n", np.poly(A))
 roots = np.roots(np.poly(A))
 # print("Roots of charpoly: \n", roots)
-print("\nReal Eigenvalues of A: \n", np.diag(eigenvalue))
-print("\nManual Eigenvalues of A: \n", roots)
-print("\nReal Eigenvectors of A: \n", eigenvector)
+# print("\nReal Eigenvalues of A: \n", np.diag(eigenvalue))
+print("\nEigenvalues of A: \n", roots)
+# print("\nReal Eigenvectors of A: \n", eigenvector)
 
 N = A[0].size
 vector = np.empty((N,0))
@@ -65,10 +65,10 @@ for i in range(N):
     res.append(1) 
     res = res / np.linalg.norm(res)
     vector = np.append(vector, np.array([res]).transpose(), axis=1)
-print("\nManual Eigenvectors of A \n", vector)
+print("\nEigenvectors of A: \n", vector)
 
 K = 3
-print("\nK Eigenvectors: \n", vector[:,:K])
+print("\nK Eigenvectors of A: \n", vector[:,:K])        # guardar en variable para devolverlo
 
 
 
