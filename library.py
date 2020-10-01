@@ -59,14 +59,14 @@ def extract_face(dir, image_path, conf):
 def save_face(face, name, dir):
 
     # creates the directory if the path does not exist
-    path = os.path.join(dir, name, 'faces')
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = Path(os.path.join(dir, 'persons', name))
+    path.mkdir(parents=True, exist_ok=True)
     
     # counts the files on the path
     files_count = len(os.listdir(path))
 	
     # saves the matrix as a vector
-    np.save(path + str(files_count), face.flatten())
+    np.save(os.path.join(path, str(files_count)), face.flatten())
 
 
 # shows a face given its matrix

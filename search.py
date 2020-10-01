@@ -15,10 +15,10 @@ faces = l.extract_face(args['path'], args['image'], args['confidence'])
 print('Look all the faces from the images and select one')
 for face in faces:
     l.show_face(face)
-i = int(input('Insert the index of the face to search: ')) - 1
+num = int(input('Insert the index of the face to search: ')) - 1
 
 # recognize the ohm image
-ohm_img = l.get_ohm_image(faces[0], args['path'])
+ohm_img = l.get_ohm_image(faces[num], args['path'])
 
 # searches for the index of the matching face
 (i, err) = l.face_space_distance(ohm_img, args['path'])
