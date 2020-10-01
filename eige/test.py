@@ -43,34 +43,36 @@ def rref(B, tol=1e-8):
       break
   return A
 
-A = np.mat("4 1 1; 2 -1 0; 1 2 0")
+A = np.mat("1 2 3 ; 4 5 6 ; 7 4 9")
 print("A: \n", A)
 eigenvalue,eigenvector = np.linalg.eig(A)
-
 # print("Charpoly of B: \n", np.poly(A))
 roots = np.roots(np.poly(A))
 # print("Roots of charpoly: \n", roots)
 print("\nReal Eigenvalues of A: \n", np.diag(eigenvalue))
 print("\nManual Eigenvalues of A: \n", np.diag(roots))
-    
 print("\nReal Eigenvectors of A: \n", eigenvector)
 
-v = []
 N = A[0].size
+vector = np.empty((N,0))
 for i in range(N):
     si = roots[i]
     Atilde = (A - si * np.identity(N))
     Atilde_red = rref(Atilde)
-    out1 = -Atilde_red[:, N-1][0].tolist()[0][0]
-    out2 = -Atilde_red[:, N-1][1].tolist()[0][0]
-    res = np.array([out1, out2, 1])
+    res = []
+    for k in range(N-1):
+        res.append(-Atilde_red[:, N-1][k].tolist()[0][0])
+    res.append(1) 
     res = res / np.linalg.norm(res)
-    v = np.concatenate((v, res), axis=0)
+    vector = np.append(vector, np.array([res]).transpose(), axis=1)
+print("\nManual Eigenvectors of A \n", vector)
 
-# print(v)
-v = v.reshape((N,N))
-v = np.transpose(v)
-print("\nManual Eigenvectors of A: \n", v)
+
+
+
+
+
+
 
 # s1 = roots[0]
 # Atilde = (A - s1 * np.identity(3))
@@ -82,20 +84,20 @@ print("\nManual Eigenvectors of A: \n", v)
 # print(res)
 
 
+# v = []
+# N = A[0].size
+# for i in range(N):
+#     si = roots[i]
+#     Atilde = (A - si * np.identity(N))
+#     Atilde_red = rref(Atilde)
+#     out1 = -Atilde_red[:, N-1][0].tolist()[0][0]
+#     out2 = -Atilde_red[:, N-1][1].tolist()[0][0]
+#     res = np.array([out1, out2, 1])
+#     res = res / np.linalg.norm(res)
+#     v = np.concatenate((v, res), axis=0)
 
 
-v = []
-N = A[0].size
-for i in range(N):
-    si = roots[i]
-    Atilde = (A - si * np.identity(N))
-    Atilde_red = rref(Atilde)
-    res = []
-    for k in range(N-1):
-        aux = -Atilde_red[:, N-1][k].tolist()[0][0]
-        res[k]=aux
-    # out1 = -Atilde_red[:, N-1][0].tolist()[0][0]
-    # out2 = -Atilde_red[:, N-1][1].tolist()[0][0]
-    res[N] = 1
-    res = res / np.linalg.norm(res)
-    v = np.concatenate((v, res), axis=0)
+# # print(v)
+# v = v.reshape((N,N))
+# v = np.transpose(v)
+# print("\nManual Eigenvectors of A: \n", v)
