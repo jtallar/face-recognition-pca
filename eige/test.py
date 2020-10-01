@@ -43,14 +43,14 @@ def rref(B, tol=1e-8):
       break
   return A
 
-A = np.mat("1 2 3 ; 4 5 6 ; 7 4 9")
+A = np.mat("0 4 1 2 ; 4 0 1 2 ; 1 1 0 2 ; 3 4 1 0")
 print("A: \n", A)
 eigenvalue,eigenvector = np.linalg.eig(A)
 # print("Charpoly of B: \n", np.poly(A))
 roots = np.roots(np.poly(A))
 # print("Roots of charpoly: \n", roots)
 print("\nReal Eigenvalues of A: \n", np.diag(eigenvalue))
-print("\nManual Eigenvalues of A: \n", np.diag(roots))
+print("\nManual Eigenvalues of A: \n", roots)
 print("\nReal Eigenvectors of A: \n", eigenvector)
 
 N = A[0].size
@@ -67,7 +67,8 @@ for i in range(N):
     vector = np.append(vector, np.array([res]).transpose(), axis=1)
 print("\nManual Eigenvectors of A \n", vector)
 
-
+K = 3
+print("\nK Eigenvectors: \n", vector[:,:K])
 
 
 
