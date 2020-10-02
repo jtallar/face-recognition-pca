@@ -118,7 +118,7 @@ def calculate_eigen(a, dir):
     np.save(os.path.join(dir, 'eigenvalues'), s)
     return (u, s)
 
-def rref(B, tol=1e-8):
+def rref(B, tol=200000):
   A = B.copy()
   rows, cols = A.shape
   r = 0
@@ -167,14 +167,15 @@ def manual_eigen(b, dir, k):
     a = np.dot(np.transpose(b), b)              # a = A'A
     s = np.roots(np.poly(a))                    # roots of characteristic polynom
     N = len(a)                                  # set N as matrix size
+    print("\n\nlength\n\n",N)
     vector = []                    # initialize result vectors matrix
-    for i in range(N):
+    for i in range(N-1):
 
         # get i-th eigenvalue from s AND A' = (A - Lambda i * Id)
-        aux = sympy.Matrix(a - s[i] * np.identity(N)).rref(iszerofunc=lambda x: abs(x)<1e-16)
-        Atilde_red = np.array(aux[0].tolist(), dtype=float)
-        # rref(a - s[i] * np.identity(N))               # A'red --> Gauss-Jordan
-        print('atilde red')
+        # aux = sympy.Matrix(a - s[i] * np.identity(N)).rref(iszerofunc=lambda x: abs(x)<1e-16)
+        # Atilde_red = np.array(aux[0].tolist(), dtype=float)
+        Atilde_red = rref(a - s[i] * np.identity(N))               # A'red --> Gauss-Jordan
+        print('Atilde_red', i)
         print(Atilde_red)
         res = []
         for j in range(N-1):
@@ -182,7 +183,7 @@ def manual_eigen(b, dir, k):
         res.append(1)                                   # last value = 1
         res = res / np.linalg.norm(res)                 # vi = vi / ||vi||
         vector.append(res)                              # append on final v
-    
+
     vector = np.transpose(vector)
     vector = np.dot(b, vector)
     for i in range(0, len(vector[0])):
