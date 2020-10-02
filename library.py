@@ -317,9 +317,13 @@ def get_ohm_image(face, dir, kpca=False):
 
     if kpca == True:
         a = np.load(os.path.join(dir, 'a-matrix.npy'))
+        if len(u) != len(a[0]):
+            raise Exception("Should be using PCA!")
         # V^T * kernel(r, A)
         return np.dot(np.transpose(u), kernel_func(r, a))
     else:
+        if len(u) != len(r):
+            raise Exception("Should be using KPCA!")
         # returns the calculated weights
         return calculate_weights_pca(r, u)
 
