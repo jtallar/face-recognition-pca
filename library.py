@@ -148,8 +148,11 @@ def calculate_pca_eigen(a, dir, n):
     # aux = np.dot(u, (np.diag(s) ** 0.5))
     # for i in range(0, len(u[0])):
     #     b = np.dot(aux[:,0:i], np.transpose(aux[:,0:i]))
+    #     sum = 0
     #     for j in range(0, len(u[0])):
-    #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
+    #         sum += b[j,j]/cov[j,j]
+    #         # print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
+    #     print("Con los primeros ", i + 1, " autovectores, promedio de % de info de ", sum / len(u[0]))
 
     u = u[:,:n]                                                        # get first k columns
     s = s[:n]
