@@ -1,5 +1,6 @@
 import library as l
 import tests as t
+import test2 as t2
 import argparse
 
 # construct the argument parse and parse the arguments
