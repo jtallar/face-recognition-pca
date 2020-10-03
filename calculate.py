@@ -2,6 +2,7 @@ import library as l
 import tests as t
 import test2 as t2
 import argparse
+# import numpy as np
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -14,12 +15,11 @@ args = vars(ap.parse_args())
 A = l.create_A(args['path'])
 
 # calculate and saves eigen values and vectors
-# (u2, v2) = l.calculate_eigen(A, args['path'])
-# (u, v) = l.manual_eigen(A, args['path'], args['kval'])
-# (u3, v3) = t.eigen_values_and_vectors(A, args['path'])
+# (u, v) = l.calculate_pca_eigen(A, args['path'], args['nval'])
+# (u2, v2) = l.calculate_pca_eigen_auto(A, args['path'], args['nval'])
 # print("\nManual:\n", u, v)
-# print("\Auto:\n", u2[:,:args['kval']], v2[:args['kval']])
-# print("\nDif\n", abs(u2[:,:args['kval']]) - abs(u), abs(v2[:args['kval']]) - abs(v))
+# print("\Auto:\n", u2, v2)
+# print("\nDif\n", abs(u2) - abs(u), abs(v2) - abs(v))
 
 if args['kpca'] == False:
     # calculate and saves eigen values and vectors
