@@ -98,16 +98,44 @@ def create_A(dir):
     np.save(os.path.join(dir, 'index'), index)
     
     # substracts to each row the mean and returns transposed
-    return np.transpose(np.subtract(a, m))
+    a = np.transpose(np.subtract(a, m))
+    np.save(os.path.join(dir, 'a-matrix'), a)
+    return a
 
+# Kernel function used to create kernel matrix
+# (X^T * Y + 1) ^ p
+def kernel_func(x, y):
+    p = 2
+    return (np.dot(np.transpose(x), y) + 1) ** p
+
+# creates the K matrix for kpca
+# recieves A matrix with Fi/Xi elements, A = [X1 X2 ... XM]
+# returns K matrix normalized
+def create_K(A):
+    M = len(A[0])
+    # create kernel matrix
+    k = kernel_func(A, A)
+
+    # Normalize K matrix
+    unoM = np.ones((M, M)) / M
+    k = k - np.dot(unoM, k) - np.dot(k, unoM) + np.dot(unoM, np.dot(k, unoM))
+
+    return k
 
 # calculates the eigenvalues and eigenvectos given a matrix
 # returns touple (u, s), being u eigenvectors and s the eigenvalues
 # TODO to be replaced with our function
-def calculate_eigen(a, dir):
-    u, s, vh = np.linalg.svd(np.dot(np.transpose(a), a), full_matrices=True)
-    
-    # u --> eigenvectors in 3 x 3 matrix, s --> eigenvalues in vector
+def calculate_eigen(a):
+    u, s, vh = np.linalg.svd(a, full_matrices=True)
+    # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
+    return (u, s)
+
+# calculates the eigenvalues and eigenvectors for the covariance matrix in pca
+# transforming the matrix eigen to the covariance eigen
+def calculate_pca_eigen(a, dir):
+    (u, s) = calculate_eigen(np.dot(np.transpose(a), a))
+    # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
+
     u = np.dot(a, u)
     for i in range(0, len(u[0])):
         u[:,i] = np.transpose(np.array(u[:,i]/np.linalg.norm(u[:,i], 2)))
@@ -125,6 +153,18 @@ def calculate_eigen(a, dir):
     # saves to files the eigen values and vectors
     np.save(os.path.join(dir, 'eigenvector'), u)
     np.save(os.path.join(dir, 'eigenvalues'), s)
+    return (u, s)
+
+# calculates the eigenvalues and eigenvectors for the K matrix in kpca
+# returns eigenvalues and eigenvectors of the K matrix, not the Covariance matrix
+def calculate_kpca_eigen(k, dir):
+    (u, s) = calculate_eigen(k)
+    # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
+
+    # saves to files the eigen values and vectors
+    np.save(os.path.join(dir, 'eigenvector'), u)
+    np.save(os.path.join(dir, 'eigenvalues'), s / len(k)) # Save eigenvalues of Covariance
+
     return (u, s)
 
 def rref(B, tol=200000):
@@ -215,25 +255,28 @@ def manual_eigen(b, dir, k):
 # fi is an N^2 vector, Fi = ri - Y
 # eigenvectors is an N^2 x K, the K best eigenvectors
 # returns omh = K vector with K weights
-def calculate_weights(fi, eigenvectors):
+def calculate_weights_pca(fi, eigenvectors):
     return np.dot(np.transpose(eigenvectors), fi)
 
 
-# creates and saces the ohm space
-# a the A matrix N^2 x M
-# u the eigenvectors N^2 x K
+# creates and saves the ohm space
+# a the A matrix N^2 x M in PCA, the K matrix M x M in KPCA
+# u the eigenvectors N^2 x K in PCA, M x M in KPCA
 # dir the dir to save
 # returns the ohm space
-def create_ohm_space(a, u, dir):
-    o = []
+def create_ohm_space(a, u, dir, kpca=False):
+    if kpca == True:
+        # V^T * K*T
+        res = np.dot(np.transpose(u), np.transpose(a))
+    else:
+        o = []
+        # for each col get the weights
+        for i in range(0, len(a[0])):
+            ohmi = calculate_weights_pca(np.transpose(a)[i], u)
+            o.append(ohmi)
 
-    # for each col get the weights
-    for i in range(0, len(a[0])):
-        ohmi = calculate_weights(np.transpose(a)[i], u)
-        o.append(ohmi)
-
-    # calculate ohm space and save
-    res = np.transpose(o)
+        # calculate ohm space and save
+        res = np.transpose(o)
     np.save(os.path.join(dir, 'ohm-space'), res)
     return res
 
@@ -278,14 +321,26 @@ def face_space_distance(ohm_img, dir, threshold=float('Inf')):
 # given an image and a dir calculates its ohm
 # face the matrix of the image
 # dir the direction of the mean and eigenvector to load
-def get_ohm_image(face, dir):
+def get_ohm_image(face, dir, kpca=False):
 
     # loads mean already calculated and eigenvector
     m = np.load(os.path.join(dir, 'mean.npy'))
     u = np.load(os.path.join(dir, 'eigenvector.npy'))
 
-    # substracts and returns the calculated weights
-    return calculate_weights(np.subtract(face.flatten(), m), u)
+    # substracts median to face
+    r = np.subtract(face.flatten(), m)
+
+    if kpca == True:
+        a = np.load(os.path.join(dir, 'a-matrix.npy'))
+        if len(u) != len(a[0]):
+            raise Exception("Should be using PCA!")
+        # V^T * kernel(r, A)
+        return np.dot(np.transpose(u), kernel_func(r, a))
+    else:
+        if len(u) != len(r):
+            raise Exception("Should be using KPCA!")
+        # returns the calculated weights
+        return calculate_weights_pca(r, u)
 
 
 # loads and gets the path of the index list
