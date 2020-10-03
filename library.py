@@ -114,6 +114,14 @@ def calculate_eigen(a, dir):
     # u --> eigenvector matrix of the covariance, with ||u||=1
     # s --> eigenvalues in vector
 
+    # FIXME: UNCOMMENT TO TEST K VALUES
+    # cov = np.dot(a, np.transpose(a))
+    # aux = np.dot(u, (np.diag(s) ** 0.5))
+    # for i in range(0, len(u[0])):
+    #     b = np.dot(aux[:,0:i], np.transpose(aux[:,0:i]))
+    #     for j in range(0, len(u[0])):
+    #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
+
     # saves to files the eigen values and vectors
     np.save(os.path.join(dir, 'eigenvector'), u)
     np.save(os.path.join(dir, 'eigenvalues'), s)
@@ -168,7 +176,6 @@ def manual_eigen(b, dir, k):
     a = np.dot(np.transpose(b), b)              # a = A'A
     s = np.roots(np.poly(a))                    # roots of characteristic polynom
     N = len(a)                                  # set N as matrix size
-    print("\n\nlength\n\n",N)
     vector = []                    # initialize result vectors matrix
     for i in range(N):
 
@@ -176,8 +183,6 @@ def manual_eigen(b, dir, k):
         # aux = sympy.Matrix(a - s[i] * np.identity(N)).rref(iszerofunc=lambda x: abs(x)<1e-16)
         # Atilde_red = np.array(aux[0].tolist(), dtype=float)
         Atilde_red = rref(a - s[i] * np.identity(N))               # A'red --> Gauss-Jordan
-        print('Atilde_red', i)
-        print(Atilde_red)
         res = []
         for j in range(N-1):
             res.append(-Atilde_red[j][N-1])             # build res
@@ -191,6 +196,14 @@ def manual_eigen(b, dir, k):
         vector[:,i] = np.transpose(np.array(vector[:,i]/np.linalg.norm(vector[:,i], 2)))
     # u --> eigenvector matrix of the covariance, with ||u||=1
     # s --> eigenvalues in vector
+
+    # FIXME: UNCOMMENT TO TEST K VALUES
+    # cov = np.dot(b, np.transpose(b))
+    # aux = np.dot(vector, (np.diag(s) ** 0.5))
+    # for i in range(0, len(vector[0])):
+    #     info = np.dot(aux[:,0:i], np.transpose(aux[:,0:i]))
+    #     for j in range(0, len(vector[0])):
+    #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", info[j,j]/cov[j,j])
 
     u = vector[:,:k]                                                        # get first k columns
     s = s[:k]
