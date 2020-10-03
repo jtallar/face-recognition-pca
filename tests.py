@@ -67,16 +67,16 @@ def sorted_eigen_values(A):
     return sorted(eigen_values, key=abs)[::-1]
 
 # Given a diagonalizable matrix, it returns a list with its eigenvalues in descending absolute value and a matrix with the corresponing eigenvectors
-def eigen_values_and_vectors(b, dir):
-    A = np.dot(np.transpose(b), b)
+def eigen_values_and_vectors(a, dir):
+    A = np.dot(np.transpose(a), a)                      # A = a'a
     n = len(A)
-    eigen_vectors = np.zeros([n, n])
-    eigen_values = sorted_eigen_values(A)
+    eigen_vectors = np.zeros([n, n])                    
+    eigen_values = sorted_eigen_values(A)               # get eigenvalues
     for i in range(len(eigen_values)):
        eigen_vector = inverse_iteration(A, eigen_values[i])
        for j in range(n):
            eigen_vectors[j][i] = eigen_vector[j]
-    eigen_vectors = np.dot(b, eigen_vectors)
+    eigen_vectors = np.dot(a, eigen_vectors)
     for i in range(0, len(eigen_vectors[0])):
         eigen_vectors[:,i] = np.transpose(np.array(eigen_vectors[:,i]/np.linalg.norm(eigen_vectors[:,i], 2)))
 

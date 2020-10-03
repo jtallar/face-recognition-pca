@@ -17,9 +17,10 @@ A = l.create_A(args['path'])
 (u3, v3) = t.eigen_values_and_vectors(A, args['path'])
 
 # print("\nManual:\n", u1)
-print("\nAuto: \n", u2)
+print("\nEigenvalues ->\nAuto:\n", v2,"\nMagic:\n", v3)
+print("\nEigenvectors ->\nAuto: \n", u2)
 print("\nMagic: \n", u3)
 
-print(len(u3), len(u3[0]), len(u2), len(u2[0]))
+# print("Magic: ",len(u3),"x", len(u3[0]),"\tAuto:", len(u2),"x", len(u2[0]))
 # creates and saves the ohm space
 # l.create_ohm_space(A, u1, args['path'])
