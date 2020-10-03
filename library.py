@@ -6,6 +6,7 @@ import cv2
 import os
 import glob
 import sympy
+import test as git
 
 # given a a base dir for the model and the image returns
 # list of matrix. Each matrix is a face
@@ -169,7 +170,7 @@ def manual_eigen(b, dir, k):
     N = len(a)                                  # set N as matrix size
     print("\n\nlength\n\n",N)
     vector = []                    # initialize result vectors matrix
-    for i in range(N-1):
+    for i in range(N):
 
         # get i-th eigenvalue from s AND A' = (A - Lambda i * Id)
         # aux = sympy.Matrix(a - s[i] * np.identity(N)).rref(iszerofunc=lambda x: abs(x)<1e-16)
