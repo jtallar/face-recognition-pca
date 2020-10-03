@@ -174,7 +174,11 @@ def calculate_kpca_eigen(k, dir, n):
     #     for j in range(0, len(u[0])):
     #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
 
-    u = u[:,:n]                                                        # get first k columns
+    # TODO: VER COMO DA SIN ESTO, porque me achica mucho los autovectores
+    # for i in range(0, len(u[0])):
+    #     u[:,i] = u[:,i] / (np.sqrt(abs(s[i])))
+
+    u = u[:,:n]                                                        # get first n columns
     s = s[:n]
 
     # saves to files the eigen values and vectors
