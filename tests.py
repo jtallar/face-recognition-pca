@@ -72,13 +72,13 @@ def eigen_values_and_vectors(a, dir):
     n = len(A)
     eigen_vectors = np.zeros([n, n])                    
     eigen_values = sorted_eigen_values(A)               # get eigenvalues
-    for i in range(len(eigen_values)):
+    for i in range(len(eigen_values)):                  # for each eigenvalue get eigenvector
        eigen_vector = inverse_iteration(A, eigen_values[i])
        for j in range(n):
            eigen_vectors[j][i] = eigen_vector[j]
     eigen_vectors = np.dot(a, eigen_vectors)
-    for i in range(0, len(eigen_vectors[0])):
-        eigen_vectors[:,i] = np.transpose(np.array(eigen_vectors[:,i]/np.linalg.norm(eigen_vectors[:,i], 2)))
+    for i in range(0, len(eigen_vectors[0])):           # for each element on eigenvector -> / ||v||
+        eigen_vectors[:,i] = np.transpose(np.array(eigen_vectors[:,i]/np.linalg.norm(eigen_vectors[:,i])))
 
     np.save(os.path.join(dir, 'eigenvalues'), eigen_values)
     np.save(os.path.join(dir, 'eigenvector'), eigen_vectors)
