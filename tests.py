@@ -36,7 +36,7 @@ def gram_schmidt(A):
 def inverse_iteration(matrix, eigen_value):
      n = len(matrix)
      bk = np.random.rand(n, 1)
-     inv = np.linalg.pinv(matrix - eigen_value * np.identity(n))
+     inv = np.linalg.inv(matrix - eigen_value * np.identity(n))
      for i in range(100):
          bk1 = calculate_next_iteration(inv, bk)
          if np.linalg.norm(np.subtract(bk,bk1)) < ITERATION_PRECISION:
@@ -73,7 +73,7 @@ def eigen_values_and_vectors(a, dir):
     eigen_vectors = np.zeros([n, n])                    
     eigen_values = sorted_eigen_values(A)               # get eigenvalues
     for i in range(len(eigen_values)):                  # for each eigenvalue get eigenvector
-       eigen_vector = inverse_iteration(A, eigen_values[i])
+       eigen_vector = inverse_iteration(a, eigen_values[i])
        for j in range(n):
            eigen_vectors[j][i] = eigen_vector[j]
     eigen_vectors = np.dot(a, eigen_vectors)
