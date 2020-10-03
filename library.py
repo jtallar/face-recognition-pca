@@ -125,15 +125,16 @@ def create_K(A):
 # calculates the eigenvalues and eigenvectos given a matrix
 # returns touple (u, s), being u eigenvectors and s the eigenvalues
 # TODO to be replaced with our function
-def calculate_eigen(a):
+def automatic_eigen(a):
     u, s, vh = np.linalg.svd(a, full_matrices=True)
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
     return (u, s)
 
 # calculates the eigenvalues and eigenvectors for the covariance matrix in pca
 # transforming the matrix eigen to the covariance eigen
-def calculate_pca_eigen(a, dir):
-    (u, s) = calculate_eigen(np.dot(np.transpose(a), a))
+def calculate_pca_eigen(a, dir, n):
+    # Automatic eigen
+    (u, s) = manual_eigen(np.dot(np.transpose(a), a))
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
 
     u = np.dot(a, u)
@@ -150,6 +151,9 @@ def calculate_pca_eigen(a, dir):
     #     for j in range(0, len(u[0])):
     #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
 
+    u = u[:,:n]                                                        # get first k columns
+    s = s[:n]
+
     # saves to files the eigen values and vectors
     np.save(os.path.join(dir, 'eigenvector'), u)
     np.save(os.path.join(dir, 'eigenvalues'), s)
@@ -157,9 +161,21 @@ def calculate_pca_eigen(a, dir):
 
 # calculates the eigenvalues and eigenvectors for the K matrix in kpca
 # returns eigenvalues and eigenvectors of the K matrix, not the Covariance matrix
-def calculate_kpca_eigen(k, dir):
-    (u, s) = calculate_eigen(k)
+def calculate_kpca_eigen(k, dir, n):
+    # Automatic eigen
+    (u, s) = manual_eigen(k)
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
+
+    # FIXME: UNCOMMENT TO TEST K VALUES
+    # cov = np.dot(a, np.transpose(a))
+    # aux = np.dot(u, (np.diag(s) ** 0.5))
+    # for i in range(0, len(u[0])):
+    #     b = np.dot(aux[:,0:i], np.transpose(aux[:,0:i]))
+    #     for j in range(0, len(u[0])):
+    #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
+
+    u = u[:,:n]                                                        # get first k columns
+    s = s[:n]
 
     # saves to files the eigen values and vectors
     np.save(os.path.join(dir, 'eigenvector'), u)
@@ -167,6 +183,7 @@ def calculate_kpca_eigen(k, dir):
 
     return (u, s)
 
+# TODO: VER QUE ONDA ESE tol
 def rref(B, tol=200000):
   A = B.copy()
   rows, cols = A.shape
@@ -212,7 +229,7 @@ def rref(B, tol=200000):
 
 # algorithm that calculates eigenvalues and eigenvectors given matrix a
 # return eigenvalues and k eigenvectors 
-def manual_eigen(b, dir, k):
+def manual_eigen(b):
     a = np.dot(np.transpose(b), b)              # a = A'A
     s = np.roots(np.poly(a))                    # roots of characteristic polynom
     N = len(a)                                  # set N as matrix size
@@ -229,28 +246,9 @@ def manual_eigen(b, dir, k):
         res.append(1)                                   # last value = 1
         res = res / np.linalg.norm(res)                 # vi = vi / ||vi||
         vector.append(res)                              # append on final v
-
+    
     vector = np.transpose(vector)
-    vector = np.dot(b, vector)
-    for i in range(0, len(vector[0])):
-        vector[:,i] = np.transpose(np.array(vector[:,i]/np.linalg.norm(vector[:,i], 2)))
-    # u --> eigenvector matrix of the covariance, with ||u||=1
-    # s --> eigenvalues in vector
-
-    # FIXME: UNCOMMENT TO TEST K VALUES
-    # cov = np.dot(b, np.transpose(b))
-    # aux = np.dot(vector, (np.diag(s) ** 0.5))
-    # for i in range(0, len(vector[0])):
-    #     info = np.dot(aux[:,0:i], np.transpose(aux[:,0:i]))
-    #     for j in range(0, len(vector[0])):
-    #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", info[j,j]/cov[j,j])
-
-    u = vector[:,:k]                                                        # get first k columns
-    s = s[:k]
-    # saves to files the eigen values and vectors
-    np.save(os.path.join(dir, 'eigenvector'), u)
-    np.save(os.path.join(dir, 'eigenvalues'), s)
-    return (u, s)
+    return (vector, s)
 
 # fi is an N^2 vector, Fi = ri - Y
 # eigenvectors is an N^2 x K, the K best eigenvectors

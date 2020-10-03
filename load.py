@@ -13,6 +13,6 @@ faces = l.extract_face(args['path'], args['image'], args['confidence'])
 
 # save faces
 for face in faces:
-    # l.show_face(face)
+    l.show_face(face)
     name = input("Enter face name: ")
     l.save_face(face, name, args['path'])

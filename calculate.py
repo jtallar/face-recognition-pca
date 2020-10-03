@@ -23,8 +23,7 @@ A = l.create_A(args['path'])
 
 if args['kpca'] == False:
     # calculate and saves eigen values and vectors
-    # (u1, v1) = l.manual_eigen(A, args['path'], args['nval'])
-    (u2, v2) = l.calculate_pca_eigen(A, args['path'])
+    (u2, v2) = l.calculate_pca_eigen(A, args['path'], args['nval'])
 
     # creates and saves the ohm space
     l.create_ohm_space(A, u2, args['path'])
@@ -32,7 +31,7 @@ else:
     K = l.create_K(A)
     
     # calculate and saves eigen values and vectors
-    (u, v) = l.calculate_kpca_eigen(K, args['path'])
+    (u, v) = l.calculate_kpca_eigen(K, args['path'], args['nval'])
 
     # creates and saves the ohm space
     l.create_ohm_space(K, u, args['path'], True)
