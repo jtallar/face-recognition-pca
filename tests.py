@@ -83,7 +83,7 @@ def eigen_values_and_vectors(b, dir):
     np.save(os.path.join(dir, 'eigenvalues'), eigen_values)
     np.save(os.path.join(dir, 'eigenvector'), eigen_vectors)
 
-    return eigen_values, eigen_vectors
+    return eigen_vectors, eigen_values 
 
 # Householder QR method as described here:
 # https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
