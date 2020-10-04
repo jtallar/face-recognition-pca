@@ -1,11 +1,11 @@
 from tkinter import *
 from tkinter import messagebox, filedialog, simpledialog
-from db import Database
+#from db import Database
 from PIL import Image, ImageTk
 import glob
 import tkinter as tk
 
-db = Database('store.db')
+#db = Database('store.db')
 
 
 
