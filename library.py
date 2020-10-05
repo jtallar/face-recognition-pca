@@ -72,8 +72,8 @@ def save_face(face, name, dir):
 # shows a face given its matrix
 # waits for the user to press escape
 def show_face(face):
-    cv2.imshow("Face x", face)
-    cv2.waitKey(0)
+    cv2.imshow("Press ESC to continue", face)
+    #cv2.waitKey(0)
     
 
 ##################################################################

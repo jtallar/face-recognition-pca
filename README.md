@@ -45,5 +45,6 @@ First, you will need to download Tkinter: https://www.activestate.com/products/t
 
 ```bash
 # Run the program
+pip3 install Pillow 
 python3 application.py
 ```
