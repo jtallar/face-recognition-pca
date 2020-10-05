@@ -1,11 +1,17 @@
 from tkinter import *
 from tkinter import messagebox, filedialog, simpledialog
-from db import Database
+#from db import Database
 from PIL import Image, ImageTk
 import glob
 import tkinter as tk
+import library as l
+import os
 
-db = Database('store.db')
+DATABASE_PATH = "/Users/geronimomaspero/Desktop/mna-tpe1/data"
+INITIAL_DIR = "/Users/geronimomaspero/Desktop/mna-tpe1"
+
+
+#db = Database('store.db')
 
 
 
@@ -71,47 +77,83 @@ db = Database('store.db')
 #
 # -------------------------------------- CODIGO PROBETA -----------------------------------------------------------------------------------
 #
+def popupresults(face):
+    #Build windows
+    popup2 = tk.Toplevel(app)
+    popup2.wm_title("Face recognition results")
+    popup2.geometry('400x100+600+480')
+
+    # LLAMAR A LA FUNCION QUE NOS DA LOS RESULTADOS
+
+    # recognize the ohm image
+    ohm_img = l.get_ohm_image(face, DATABASE_PATH)
+
+    # searches for the index of the matching face
+    (i, err) = l.face_space_distance(ohm_img, DATABASE_PATH)
+    # Error Label
+    label = Label(popup2, text='Error is: ' + str(err), font=('bold', 14))
+    label.grid(row=0, column=2)
+    # gets the corresponding path given the index
+    path = l.get_matching_path(i, DATABASE_PATH)
+
+    path2 = os.path.dirname(path)
+    # Path Label
+    label = Label(popup2, text= os.path.basename(path2), font=('bold', 14))
+    label.grid(row=1, column=2)
+    
+    # IMPRIMIR LOS RESULTADOS 
+
+    # Display save button
+    button_save = Button(popup2, text="Next", command=popup2.destroy)
+    button_save.grid(row=3, column=2)
+
+    #when this popup is done waiting for user's input, it will return
+    popup2.wait_window()
+
+
         
 def open_image():
     global my_image
-    image_path = filedialog.askopenfilename( initialdir="/Users/geronimomaspero/Desktop/part_manager", title="Select a File", filetypes=( ("All Files", "*.*"), ("png files", "*.png"), ("jpg files", "*.jpg")))
+    image_path = filedialog.askopenfilename( initialdir=INITIAL_DIR, title="Select a File", filetypes=( ("All Files", "*.*"), ("png files", "*.png"), ("jpg files", "*.jpg")))
     my_image = ImageTk.PhotoImage(Image.open(image_path))
     #creo un label y a ese label le cargo la imagen
     my_image_label = Label(image=my_image)
     #Ubico a mi label en pantalla
     my_image_label.place(height=400, width=400,x=400,y=200)
 
-    # Display Label 0
-    label5 = Label(app, text="Potential name: John Cena", font=('bold', 14))
-    label5.place(height=20, width=400,x=400,y=600)
+    # get faces
+    faces = l.extract_face(DATABASE_PATH, image_path, 0.2)
 
-    # Display Label 1
-    label6 = Label(app, text="Percentage of similarity = 98.4%", font=('bold', 14))
-    label6.place(height=20, width=400,x=400,y=630)
+    # Now we iterate in all the faces
+    for face in faces:
+        l.show_face(face)
+        #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+        name = popupresults(face)
 
-    # Display Label 2
-    label7 = Label(app, text="Dick size = 20 inches", font=('bold', 14))
-    label7.place(height=20, width=400,x=400,y=660)
     
 
         
-def popupmessage(path_variable):
+
+        
+def popupmessage(face):
     #Build windows
     popup = tk.Toplevel(app)
     popup.wm_title("Name Assignment")
-    popup.geometry('500x500')
+    popup.geometry('400x100+600+480')
 
     # Display Label
-    label = Label(popup, text="Please assign the correct name to the following face", font=('bold', 14))
+    label = Label(popup, text="Please assign the name of the person above", font=('bold', 14))
     label.grid(row=0, column=2)
 
     # Obtain image from the path_variable (argument) 
-    global my_image2
-    my_image2 = ImageTk.PhotoImage(Image.open(path_variable))
+    #global my_image2
+    #my_image2 = ImageTk.PhotoImage(Image.open(path_variable))
     
     # Display image in the popup
-    my_image_label2 = Label(popup,image=my_image2)
-    my_image_label2.grid(row=1, column=2)
+    #my_image_label2 = Label(popup,image=my_image2)
+    #my_image_label2.grid(row=1, column=2)
+
+    l.show_face(face)
 
     # Display input box
     user_text = StringVar()
@@ -128,14 +170,31 @@ def popupmessage(path_variable):
 
 
 def open_directory():
-    path = filedialog.askdirectory( initialdir="/Users/geronimomaspero/Desktop/part_manager", title="Select a File")
+    path = filedialog.askdirectory( initialdir=INITIAL_DIR, title="Select a File")
     #this is a list with all the images' paths.
-    list_of_items = glob.glob(path + '/*.png')
+    list_of_items = glob.glob(path + '/*.jpeg')
     for file in list_of_items:
-        #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
-        name = popupmessage(file)
-        a = name.get()
-        # Ya tengo la imagen y su respectivo nombre
+        #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
+
+        # get faces
+        faces = l.extract_face(DATABASE_PATH, file, 0.2)
+
+        # save faces
+        for face in faces:
+            #l.show_face(face)
+            #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+            name = popupmessage(face)
+            l.save_face(face, name.get(), DATABASE_PATH)
+
+    #Calculamos todo
+    # create the matrix A from the data
+    A = l.create_A(DATABASE_PATH)
+
+    # calculate and saves eigen values and vectors
+    (u, v) = l.calculate_eigen(A, DATABASE_PATH )
+
+    # creates and saves the ohm space
+    l.create_ohm_space(A, u, DATABASE_PATH)
 
         
 
