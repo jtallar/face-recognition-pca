@@ -237,6 +237,7 @@ def rref(B, tol=200000):
 # algorithm that calculates eigenvalues and eigenvectors given matrix a
 # return eigenvalues and k eigenvectors 
 def manual_eigen(a):
+    # TODO: STOP USING roots and poly
     s = np.roots(np.poly(a))                    # roots of characteristic polynom
     N = len(a)                                  # set N as matrix size
     vector = []                    # initialize result vectors matrix
