@@ -5,8 +5,8 @@ import numpy as np
 import cv2
 import os
 import glob
-import sympy
-import test as git
+import tensorflow as tf
+from tensorflow import keras
 
 # given a a base dir for the model and the image returns
 # list of matrix. Each matrix is a face
@@ -390,3 +390,58 @@ def process_data(path, nval=6, kpca=False):
 
         # creates and saves the ohm space
         l.create_ohm_space(K, u, path, True)
+
+
+def get_max_prediction(eigenfaces, face_labels, input, people_count):
+    # A partir de las eigenfaces y una imagen de entrada, determinar a qué persona pertenece la imagen de entrada
+
+    # (eigenfaces, face_labels) 
+    # (test_image, test_label)
+
+    model = keras.Sequential([
+    keras.layers.Dense(128, activation='relu'),  # 128 nodos de aprendizaje
+    keras.layers.Dense(people_count)             # cantidad de personas en la bd 
+    ])
+
+    model.compile(optimizer ='adam',
+              loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
+    model.fit(eigenfaces, face_labels, epochs=15)
+
+    probability_model = keras.Sequential([model, 
+                                         keras.layers.Softmax()])
+    
+
+    input = (np.expand_dims(input,0))
+    
+    predictions = probability_model.predict(input)
+    
+    max_prob = np.argmax(predictions[0])
+
+    print(predictions[0][max_prob])
+    return (max_prob, predictions[0][max_prob])
+
+
+def classify(ohm_img, dir, threshold=float('Inf')):
+
+    # load ohm space and eigen values
+    ohm_space = np.load(os.path.join(dir, 'ohm-space.npy'))
+
+    label_list = np.load(os.path.join(dir, 'index.npy'))
+
+    # extract dirname from label_list
+    index = 0
+    for i in label_list:
+        label_list[index] = os.path.dirname(i)
+        index += 1
+    
+    unique_labels = np.unique(label_list)
+    m = np.zeros(len(label_list))
+    for i in range(0, len(label_list)):
+        m[i] = np.where(unique_labels == label_list[i])[0]
+    
+    (index, prob) = get_max_prediction(np.transpose(ohm_space), m, ohm_img, len(unique_labels))
+    return (unique_labels[index], prob)
+
+    

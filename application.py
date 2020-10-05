@@ -97,17 +97,19 @@ def popupresults(face):
     # recognize the ohm image
     ohm_img = l.get_ohm_image(face, args['path'], args['kpca'])
 
+    (path, prob) = l.classify(ohm_img, args['path'])
+
     # searches for the index of the matching face
-    (i, err) = l.face_space_distance(ohm_img, args['path'])
-    # Error Label
-    label = Label(popup2, text='Error is: ' + str(err), font=('bold', 14))
+    # (i, err) = l.face_space_distance(ohm_img, args['path'])
+    # Matching Probability Label
+    label = Label(popup2, text='Matching Probability is: ' + str(prob), font=('bold', 14))
     label.grid(row=0, column=2)
     # gets the corresponding path given the index
-    path = l.get_matching_path(i, args['path'])
+    # path = l.get_matching_path(i, args['path'])
 
-    path2 = os.path.dirname(path)
+    # path = os.path.dirname(path)
     # Path Label
-    label = Label(popup2, text= os.path.basename(path2), font=('bold', 14))
+    label = Label(popup2, text= os.path.basename(path), font=('bold', 14))
     label.grid(row=1, column=2)
     
     # IMPRIMIR LOS RESULTADOS 
