@@ -107,7 +107,7 @@ def popupmessage(face):
 
 
 def open_directory():
-    path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+    path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a Folder or ")
     #this is a list with all the images' paths.
     list_of_items = glob.glob(path + '/*.jpeg')
     for file in list_of_items:

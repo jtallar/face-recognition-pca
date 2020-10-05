@@ -1,5 +1,13 @@
 from tkinter import *
 import applib as lib
+import library as l
+import glob
+
+import os
+from tkinter import filedialog as Filedialog
+
+
+from PIL import Image, ImageTk
 
 W_RATIO = 1.5
 W_BGCOL ='#494949'
@@ -88,7 +96,56 @@ calculate_btn = Button(cal_frame, text ="Preprocess Data", relief=RAISED, border
 calculate_btn.pack(side=LEFT, fill=X)
 
 
-####################### configurations layout #######################
+####################### loads layout #######################
+
+
+def analize_images():
+
+    # get directory path
+    path = Filedialog.askdirectory(initialdir=os.getcwd(), title="Select a Folder or File")
+    global load_img
+
+    # forget button and load image label
+    load_btn.place_forget()
+    image_label.pack(side=TOP)
+    image_btn.place(anchor=SE, relx=1, rely=1, relwidth=0.25, relheight=0.1)
+    image_entry.place(anchor=SW, relx=0, rely=1, relwidth=0.7, relheight=0.1)
+
+
+    # calculate max resolution posible for image
+    res = int(min(face_frame.winfo_height(), face_frame.winfo_width()) * 0.8)
+    
+    # get all images paths (names)
+    images = glob.glob(path + '/*.jp*g')
+    for image in images:
+        faces = l.extract_face(DIR, image, confidence_factor.get())
+
+        # after extract get each face
+        for face in faces:
+            load_img = ImageTk.PhotoImage(Image.fromarray(face).resize((res,res),1))
+            image_label.config(image=load_img)
+            image_btn.wait_variable(image_btn_var)
+
+
+face_frame = Frame(load_frame, bg=W_BGCOL)
+face_frame.place(relx=0.1, rely=0.1, relwidth=0.8, relheight=0.8)
+
+image_label = Label(face_frame)
+image_entry = Entry(face_frame)
+image_btn_var = IntVar()
+image_btn = Button(face_frame, text='Save Face', command=lambda: image_btn_var.set(1))
+
+load_btn = Button(face_frame, text='Select Image Folder...', command=analize_images)
+load_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
+
+
+
+
+
+
+
+
+
 
 
 

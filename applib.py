@@ -1,4 +1,8 @@
 import library as l
+from tkinter import messagebox, filedialog, simpledialog
+from PIL import Image, ImageTk
+import glob
+import os
 
 # function to call on calculate button
 def calculate(path, kpca, nval):
@@ -26,3 +30,7 @@ def calculate(path, kpca, nval):
 
         # creates and saves the ohm space
         l.create_ohm_space(K, u, path, True)
+
+
+
+
