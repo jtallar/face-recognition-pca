@@ -183,22 +183,28 @@ def popupmessage(face):
 
 def open_directory():
     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
-    #this is a list with all the images' paths.
-    list_of_items = glob.glob(path + '/*.jpeg')
-    for file in list_of_items:
-        #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
+    if path:
+        #this is a list with all the images' paths.
+        types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+        list_of_items = []
+        for t in types:
+            list_of_items.extend(glob.glob(path + t))
+        
+        # list_of_items = glob.glob(path + '/*.jpeg')
+        for file in list_of_items:
+            #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
 
-        # get faces
-        faces = l.extract_face(args['path'], file, args['confidence'])
+            # get faces
+            faces = l.extract_face(args['path'], file, args['confidence'])
 
-        # save faces
-        for face in faces:
-            #l.show_face(face)
-            #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
-            name = popupmessage(face)
-            l.save_face(face, name.get(), args['path'])
+            # save faces
+            for face in faces:
+                #l.show_face(face)
+                #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+                name = popupmessage(face)
+                l.save_face(face, name.get(), args['path'])
 
-    l.process_data(args['path'], args['nval'], args['kpca'])       
+        l.process_data(args['path'], args['nval'], args['kpca'])
 
 
 

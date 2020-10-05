@@ -133,8 +133,8 @@ def automatic_eigen(a):
 # calculates the eigenvalues and eigenvectors for the covariance matrix in pca
 # transforming the matrix eigen to the covariance eigen
 def calculate_pca_eigen(a, dir, n):
-    # Automatic eigen
-    (u, s) = manual_eigen(np.dot(np.transpose(a), a))
+    # TODO: CHANGE TO manual_eigen
+    (u, s) = automatic_eigen(np.dot(np.transpose(a), a))
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
 
     u = np.dot(a, u)
@@ -165,7 +165,7 @@ def calculate_pca_eigen(a, dir, n):
 # calculates the eigenvalues and eigenvectors for the K matrix in kpca
 # returns eigenvalues and eigenvectors of the K matrix, not the Covariance matrix
 def calculate_kpca_eigen(k, dir, n):
-    # Automatic eigen
+    
     (u, s) = manual_eigen(k)
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
 
@@ -367,37 +367,32 @@ def get_matching_path(index, dir):
 # kpca - if true, use kpca. Optional
 def process_data(path, nval=6, kpca=False):
     # create the matrix A from the data
-    A = l.create_A(path)
+    A = create_A(path)
 
     # calculate and saves eigen values and vectors
-    # (u, v) = l.calculate_pca_eigen(A, path, nval)
-    # (u2, v2) = l.calculate_pca_eigen_auto(A, path, nval)
+    # (u, v) = calculate_pca_eigen(A, path, nval)
+    # (u2, v2) = calculate_pca_eigen_auto(A, path, nval)
     # print("\nManual:\n", u, v)
     # print("\Auto:\n", u2, v2)
     # print("\nDif\n", abs(u2) - abs(u), abs(v2) - abs(v))
 
     if kpca == False:
         # calculate and saves eigen values and vectors
-        (u, v) = l.calculate_pca_eigen(A, path, nval)
+        (u, v) = calculate_pca_eigen(A, path, nval)
 
         # creates and saves the ohm space
-        l.create_ohm_space(A, u, path)
+        create_ohm_space(A, u, path)
     else:
-        K = l.create_K(A)
+        K = create_K(A)
         
         # calculate and saves eigen values and vectors
-        (u, v) = l.calculate_kpca_eigen(K, path, nval)
+        (u, v) = calculate_kpca_eigen(K, path, nval)
 
         # creates and saves the ohm space
-        l.create_ohm_space(K, u, path, True)
+        create_ohm_space(K, u, path, True)
 
-
-def get_max_prediction(eigenfaces, face_labels, input, people_count):
-    # A partir de las eigenfaces y una imagen de entrada, determinar a qué persona pertenece la imagen de entrada
-
-    # (eigenfaces, face_labels) 
-    # (test_image, test_label)
-
+# TODO: DEBERIAMOS CREAR SIEMPRE EL MODELO? O GUARDARLO
+def create_nn_model(eigenfaces, face_labels, people_count):
     model = keras.Sequential([
     keras.layers.Dense(128, activation='relu'),  # 128 nodos de aprendizaje
     keras.layers.Dense(people_count)             # cantidad de personas en la bd 
@@ -407,12 +402,21 @@ def get_max_prediction(eigenfaces, face_labels, input, people_count):
               loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-    model.fit(eigenfaces, face_labels, epochs=15)
+    # TODO: determinar epoch
+    model.fit(eigenfaces, face_labels, epochs=20)
 
     probability_model = keras.Sequential([model, 
                                          keras.layers.Softmax()])
-    
+    return probability_model
 
+def get_max_prediction(eigenfaces, face_labels, input, people_count):
+    # A partir de las eigenfaces y una imagen de entrada, determinar a qué persona pertenece la imagen de entrada
+
+    # (eigenfaces, face_labels) 
+    # (test_image, test_label)
+
+    probability_model = create_nn_model(eigenfaces, face_labels, people_count)
+    
     input = (np.expand_dims(input,0))
     
     predictions = probability_model.predict(input)
