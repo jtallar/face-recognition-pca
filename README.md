@@ -39,7 +39,7 @@ pip3 install opencv-python
 # loads to the database the faces on the image
 # data is the folder, path to the "database"
 # image is the path to the image to check
-# confidence value for face detection, optional
+# confidence value for face detection, optional (default 0.2)
 python3 load.py --path /path/to/data --image path/to/image.jpeg --confidence 0.2
 ```
 
@@ -48,7 +48,9 @@ python3 load.py --path /path/to/data --image path/to/image.jpeg --confidence 0.2
 ```bash
 # makes the required calculation of the already processed data
 # data is the folder, path to the "database"
-python3 calculate.py --path /path/to/data
+# nval is the n values to take from the eigen values and vectors
+# k is a flag to use KPCA instead of PCA, optional (default false)
+python3 calculate.py --path /path/to/data --nval val -k
 ```
 
 ### 4. Search for matches
@@ -56,7 +58,8 @@ python3 calculate.py --path /path/to/data
 # given a image checks for coincidences
 # data is the folder, path to the "database"
 # image is the path to the image to check
-# confidence value for face detection, optional
+# confidence value for face detection, optional (default 0.2)
+# k is a flag to use KPCA instead of PCA, optional (default false)
 python3 search.py --path /path/to/data --image /path/to/image.jpeg --confidence val
 ``` -->
 

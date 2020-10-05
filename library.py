@@ -5,6 +5,8 @@ import numpy as np
 import cv2
 import os
 import glob
+import sympy
+import test as git
 
 # given a a base dir for the model and the image returns
 # list of matrix. Each matrix is a face
@@ -96,50 +98,189 @@ def create_A(dir):
     np.save(os.path.join(dir, 'index'), index)
     
     # substracts to each row the mean and returns transposed
-    return np.transpose(np.subtract(a, m))
+    a = np.transpose(np.subtract(a, m))
+    np.save(os.path.join(dir, 'a-matrix'), a)
+    return a
 
+# Kernel function used to create kernel matrix
+# (X^T * Y + 1) ^ p
+def kernel_func(x, y):
+    p = 2
+    return (np.dot(np.transpose(x), y) + 1) ** p
+
+# creates the K matrix for kpca
+# recieves A matrix with Fi/Xi elements, A = [X1 X2 ... XM]
+# returns K matrix normalized
+def create_K(A):
+    M = len(A[0])
+    # create kernel matrix
+    k = kernel_func(A, A)
+
+    # Normalize K matrix
+    unoM = np.ones((M, M)) / M
+    k = k - np.dot(unoM, k) - np.dot(k, unoM) + np.dot(unoM, np.dot(k, unoM))
+
+    return k
 
 # calculates the eigenvalues and eigenvectos given a matrix
 # returns touple (u, s), being u eigenvectors and s the eigenvalues
 # TODO to be replaced with our function
-def calculate_eigen(a, dir):
-    u, s, vh = np.linalg.svd(np.dot(np.transpose(a), a), full_matrices=True)
-    # u --> eigenvectors in 3 x 3 matrix, s --> eigenvalues in vector
-   
+def automatic_eigen(a):
+    u, s, vh = np.linalg.svd(a, full_matrices=True)
+    # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
+    return (u, s)
+
+# calculates the eigenvalues and eigenvectors for the covariance matrix in pca
+# transforming the matrix eigen to the covariance eigen
+def calculate_pca_eigen(a, dir, n):
+    # Automatic eigen
+    (u, s) = manual_eigen(np.dot(np.transpose(a), a))
+    # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
+
     u = np.dot(a, u)
     for i in range(0, len(u[0])):
         u[:,i] = np.transpose(np.array(u[:,i]/np.linalg.norm(u[:,i], 2)))
     # u --> eigenvector matrix of the covariance, with ||u||=1
     # s --> eigenvalues in vector
 
+    # FIXME: UNCOMMENT TO TEST K VALUES
+    # cov = np.dot(a, np.transpose(a))
+    # aux = np.dot(u, (np.diag(s) ** 0.5))
+    # for i in range(0, len(u[0])):
+    #     b = np.dot(aux[:,0:i], np.transpose(aux[:,0:i]))
+    #     sum = 0
+    #     for j in range(0, len(u[0])):
+    #         sum += b[j,j]/cov[j,j]
+    #         # print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
+    #     print("Con los primeros ", i + 1, " autovectores, promedio de % de info de ", sum / len(u[0]))
+
+    u = u[:,:n]                                                        # get first k columns
+    s = s[:n]
+
     # saves to files the eigen values and vectors
     np.save(os.path.join(dir, 'eigenvector'), u)
     np.save(os.path.join(dir, 'eigenvalues'), s)
     return (u, s)
 
+# calculates the eigenvalues and eigenvectors for the K matrix in kpca
+# returns eigenvalues and eigenvectors of the K matrix, not the Covariance matrix
+def calculate_kpca_eigen(k, dir, n):
+    # Automatic eigen
+    (u, s) = manual_eigen(k)
+    # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
+
+    # FIXME: UNCOMMENT TO TEST K VALUES
+    # cov = np.dot(a, np.transpose(a))
+    # aux = np.dot(u, (np.diag(s) ** 0.5))
+    # for i in range(0, len(u[0])):
+    #     b = np.dot(aux[:,0:i], np.transpose(aux[:,0:i]))
+    #     for j in range(0, len(u[0])):
+    #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
+
+    # TODO: VER COMO DA SIN ESTO, porque me achica mucho los autovectores
+    # for i in range(0, len(u[0])):
+    #     u[:,i] = u[:,i] / (np.sqrt(abs(s[i])))
+
+    u = u[:,:n]                                                        # get first n columns
+    s = s[:n]
+
+    # saves to files the eigen values and vectors
+    np.save(os.path.join(dir, 'eigenvector'), u)
+    np.save(os.path.join(dir, 'eigenvalues'), s / len(k)) # Save eigenvalues of Covariance
+
+    return (u, s)
+
+# TODO: VER QUE ONDA ESE tol
+def rref(B, tol=200000):
+  A = B.copy()
+  rows, cols = A.shape
+  r = 0
+  pivots_pos = []
+  row_exchanges = np.arange(rows)
+  for c in range(cols):
+
+    ## Find the pivot row:
+    pivot = np.argmax (np.abs (A[r:rows,c])) + r
+    m = np.abs(A[pivot, c])
+    if m <= tol:
+      ## Skip column c, making sure the approximately zero terms are
+      ## actually zero.
+      A[r:rows, c] = np.zeros(rows-r)
+    else:
+      ## keep track of bound variables
+      pivots_pos.append((r,c))
+
+      if pivot != r:
+        ## Swap current row and pivot row
+        A[[pivot, r], c:cols] = A[[r, pivot], c:cols]
+        row_exchanges[[pivot,r]] = row_exchanges[[r,pivot]]
+        
+      ## Normalize pivot row
+      A[r, c:cols] = A[r, c:cols] / A[r, c]
+
+      ## Eliminate the current column
+      v = A[r, c:cols]
+      ## Above (before row r):
+      if r > 0:
+        ridx_above = np.arange(r)
+        A[ridx_above, c:cols] = A[ridx_above, c:cols] - np.outer(v, A[ridx_above, c]).T
+      ## Below (after row r):
+      if r < rows-1:
+        ridx_below = np.arange(r+1,rows)
+        A[ridx_below, c:cols] = A[ridx_below, c:cols] - np.outer(v, A[ridx_below, c]).T
+      r += 1
+    ## Check if done
+    if r == rows:
+      break
+  return A
+
+# algorithm that calculates eigenvalues and eigenvectors given matrix a
+# return eigenvalues and k eigenvectors 
+def manual_eigen(a):
+    s = np.roots(np.poly(a))                    # roots of characteristic polynom
+    N = len(a)                                  # set N as matrix size
+    vector = []                    # initialize result vectors matrix
+    for i in range(N):
+
+        # get i-th eigenvalue from s AND A' = (A - Lambda i * Id)
+        # aux = sympy.Matrix(a - s[i] * np.identity(N)).rref(iszerofunc=lambda x: abs(x)<1e-16)
+        # Atilde_red = np.array(aux[0].tolist(), dtype=float)
+        Atilde_red = rref(a - s[i] * np.identity(N))               # A'red --> Gauss-Jordan
+        res = []
+        for j in range(N-1):
+            res.append(-Atilde_red[j][N-1])             # build res
+        res.append(1)                                   # last value = 1
+        res = res / np.linalg.norm(res)                 # vi = vi / ||vi||
+        vector.append(res)                              # append on final v
+    
+    vector = np.transpose(vector)
+    return (vector, s)
 
 # fi is an N^2 vector, Fi = ri - Y
 # eigenvectors is an N^2 x K, the K best eigenvectors
 # returns omh = K vector with K weights
-def calculate_weights(fi, eigenvectors):
+def calculate_weights_pca(fi, eigenvectors):
     return np.dot(np.transpose(eigenvectors), fi)
 
 
-# creates and saces the ohm space
-# a the A matrix N^2 x M
-# u the eigenvectors N^2 x K
+# creates and saves the ohm space
+# a the A matrix N^2 x M in PCA, the K matrix M x M in KPCA
+# u the eigenvectors N^2 x K in PCA, M x M in KPCA
 # dir the dir to save
 # returns the ohm space
-def create_ohm_space(a, u, dir):
-    o = []
+def create_ohm_space(a, u, dir, kpca=False):
+    if kpca == True:
+        # V^T * K*T
+        res = np.dot(np.transpose(u), np.transpose(a))
+    else:
+        o = []
+        # for each col get the weights
+        for i in range(0, len(a[0])):
+            ohmi = calculate_weights_pca(np.transpose(a)[i], u)
+            o.append(ohmi)
 
-    # for each col get the weights
-    for i in range(0, len(a[0])):
-        ohmi = calculate_weights(np.transpose(a)[i], u)
-        o.append(ohmi)
-
-    # calculate ohm space and save
-    res = np.transpose(o)
+        # calculate ohm space and save
+        res = np.transpose(o)
     np.save(os.path.join(dir, 'ohm-space'), res)
     return res
 
@@ -184,14 +325,26 @@ def face_space_distance(ohm_img, dir, threshold=float('Inf')):
 # given an image and a dir calculates its ohm
 # face the matrix of the image
 # dir the direction of the mean and eigenvector to load
-def get_ohm_image(face, dir):
+def get_ohm_image(face, dir, kpca=False):
 
     # loads mean already calculated and eigenvector
     m = np.load(os.path.join(dir, 'mean.npy'))
     u = np.load(os.path.join(dir, 'eigenvector.npy'))
 
-    # substracts and returns the calculated weights
-    return calculate_weights(np.subtract(face.flatten(), m), u)
+    # substracts median to face
+    r = np.subtract(face.flatten(), m)
+
+    if kpca == True:
+        a = np.load(os.path.join(dir, 'a-matrix.npy'))
+        if len(u) != len(a[0]):
+            raise Exception("Should be using PCA!")
+        # V^T * kernel(r, A)
+        return np.dot(np.transpose(u), kernel_func(r, a))
+    else:
+        if len(u) != len(r):
+            raise Exception("Should be using KPCA!")
+        # returns the calculated weights
+        return calculate_weights_pca(r, u)
 
 
 # loads and gets the path of the index list
