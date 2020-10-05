@@ -6,9 +6,18 @@ import glob
 import tkinter as tk
 import library as l
 import os
+import argparse
 
-DATABASE_PATH = "/Users/geronimomaspero/Desktop/mna-tpe1/data"
-INITIAL_DIR = "/Users/geronimomaspero/Desktop/mna-tpe1"
+# DATABASE_PATH = "/Users/geronimomaspero/Desktop/mna-tpe1/data"
+# INITIAL_DIR = "/Users/geronimomaspero/Desktop/mna-tpe1"
+
+# Read arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-p", "--path", required=True, help="path to data")
+ap.add_argument("-n", "--nval", required=True, type=int, help="heuristic n data")
+ap.add_argument("-k", "--kpca", default=False, action='store_true', help="use kpca instead of pca")
+ap.add_argument("-c", "--confidence", type=float, default=0.2, help="confidence ratio")
+args = vars(ap.parse_args())
 
 
 #db = Database('store.db')
@@ -86,15 +95,15 @@ def popupresults(face):
     # LLAMAR A LA FUNCION QUE NOS DA LOS RESULTADOS
 
     # recognize the ohm image
-    ohm_img = l.get_ohm_image(face, DATABASE_PATH)
+    ohm_img = l.get_ohm_image(face, args['path'], args['kpca'])
 
     # searches for the index of the matching face
-    (i, err) = l.face_space_distance(ohm_img, DATABASE_PATH)
+    (i, err) = l.face_space_distance(ohm_img, args['path'])
     # Error Label
     label = Label(popup2, text='Error is: ' + str(err), font=('bold', 14))
     label.grid(row=0, column=2)
     # gets the corresponding path given the index
-    path = l.get_matching_path(i, DATABASE_PATH)
+    path = l.get_matching_path(i, args['path'])
 
     path2 = os.path.dirname(path)
     # Path Label
@@ -114,21 +123,22 @@ def popupresults(face):
         
 def open_image():
     global my_image
-    image_path = filedialog.askopenfilename( initialdir=INITIAL_DIR, title="Select a File", filetypes=( ("All Files", "*.*"), ("png files", "*.png"), ("jpg files", "*.jpg")))
-    my_image = ImageTk.PhotoImage(Image.open(image_path))
-    #creo un label y a ese label le cargo la imagen
-    my_image_label = Label(image=my_image)
-    #Ubico a mi label en pantalla
-    my_image_label.place(height=400, width=400,x=400,y=200)
+    image_path = filedialog.askopenfilename( initialdir=os.getcwd(), title="Select a File", filetypes=( ("All Files", "*.*"), ("png files", "*.png"), ("jpg files", "*.jpg")))
+    if image_path:
+        my_image = ImageTk.PhotoImage(Image.open(image_path))
+        #creo un label y a ese label le cargo la imagen
+        my_image_label = Label(image=my_image)
+        #Ubico a mi label en pantalla
+        my_image_label.place(height=400, width=400,x=400,y=200)
 
-    # get faces
-    faces = l.extract_face(DATABASE_PATH, image_path, 0.2)
+        # get faces
+        faces = l.extract_face(args['path'], image_path, args['confidence'])
 
-    # Now we iterate in all the faces
-    for face in faces:
-        l.show_face(face)
-        #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
-        name = popupresults(face)
+        # Now we iterate in all the faces
+        for face in faces:
+            l.show_face(face)
+            #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+            name = popupresults(face)
 
     
 
@@ -170,42 +180,27 @@ def popupmessage(face):
 
 
 def open_directory():
-    path = filedialog.askdirectory( initialdir=INITIAL_DIR, title="Select a File")
+    path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
     #this is a list with all the images' paths.
     list_of_items = glob.glob(path + '/*.jpeg')
     for file in list_of_items:
         #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
 
         # get faces
-        faces = l.extract_face(DATABASE_PATH, file, 0.2)
+        faces = l.extract_face(args['path'], file, args['confidence'])
 
         # save faces
         for face in faces:
             #l.show_face(face)
             #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
             name = popupmessage(face)
-            l.save_face(face, name.get(), DATABASE_PATH)
+            l.save_face(face, name.get(), args['path'])
 
-    #Calculamos todo
-    # create the matrix A from the data
-    A = l.create_A(DATABASE_PATH)
-
-    # calculate and saves eigen values and vectors
-    (u, v) = l.calculate_eigen(A, DATABASE_PATH )
-
-    # creates and saves the ohm space
-    l.create_ohm_space(A, u, DATABASE_PATH)
-
-        
-
-
-    
+    l.process_data(args['path'], args['nval'], args['kpca'])       
 
 
 
-
-
-#---------------------# FUNCTIONS #---------------------#
+#---------------------# APPLICATION #---------------------#    
 
 # Create window object
 app = tk.Tk()

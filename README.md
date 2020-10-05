@@ -18,13 +18,21 @@ INITIAL_DIR = "/Users/geronimomaspero/Desktop/mna-tpe1"
 
 ### 2. Run the program
 First, you will need to download Tkinter: https://www.activestate.com/products/tcl/downloads/ 
+In ubuntu
+sudo apt-get install python3-pil python3-pil.imagetk
 
 ```bash
 # execute the following commands
 pip3 install Pillow 
 pip3 install numpy
 pip3 install opencv-python
-python3 application.py
+
+# run the app
+# data is the folder, path to the "database"
+# confidence value for face detection, optional (default 0.2)
+# nval is the n values to take from the eigen values and vectors
+# k is a flag to use KPCA instead of PCA, optional (default false)
+python3 application.py --path /path/to/data --confidence 0.2 -nval 6 -k
 ```
 
 <!-- ### 2. Face extraction
