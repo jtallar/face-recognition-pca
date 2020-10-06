@@ -165,8 +165,8 @@ def calculate_pca_eigen(a, dir, n):
 # calculates the eigenvalues and eigenvectors for the K matrix in kpca
 # returns eigenvalues and eigenvectors of the K matrix, not the Covariance matrix
 def calculate_kpca_eigen(k, dir, n):
-    
-    (u, s) = manual_eigen(k)
+    # TODO: CHANGE TO manual_eigen
+    (u, s) = automatic_eigen(k)
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
 
     # FIXME: UNCOMMENT TO TEST K VALUES
@@ -178,8 +178,8 @@ def calculate_kpca_eigen(k, dir, n):
     #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
 
     # TODO: VER COMO DA SIN ESTO, porque me achica mucho los autovectores
-    # for i in range(0, len(u[0])):
-    #     u[:,i] = u[:,i] / (np.sqrt(abs(s[i])))
+    for i in range(0, len(u[0])):
+        u[:,i] = u[:,i] / (np.linalg.norm(u[:,i], 2) * (np.sqrt(abs(s[i]))))
 
     u = u[:,:n]                                                        # get first n columns
     s = s[:n]
@@ -403,8 +403,10 @@ def create_nn_model(eigenfaces, face_labels, people_count):
               loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-    # TODO: determinar epoch
-    model.fit(eigenfaces, face_labels, epochs=20)
+    # TODO: determinar epoch --> 20 va mejor, al menos con 11 personas x 8 fotos y en PCA
+    # callback = keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
+    # model.fit(eigenfaces, face_labels, epochs=100, callbacks=[callback])
+    model.fit(eigenfaces, face_labels, epochs=20, verbose=0)
 
     probability_model = keras.Sequential([model, 
                                          keras.layers.Softmax()])
@@ -424,7 +426,6 @@ def get_max_prediction(eigenfaces, face_labels, input, people_count):
     
     max_prob = np.argmax(predictions[0])
 
-    print(predictions[0][max_prob])
     return (max_prob, predictions[0][max_prob])
 
 
