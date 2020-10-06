@@ -1,13 +1,11 @@
 from tkinter import *
-import applib as lib
+from PIL import Image, ImageTk
+from tkinter import filedialog as Filedialog
 import library as l
 import glob
-
 import os
-from tkinter import filedialog as Filedialog
 
 
-from PIL import Image, ImageTk
 
 W_RATIO = 1.5
 W_BGCOL ='#494949'
@@ -92,7 +90,7 @@ confidence_factor.set(0.2)
 cal_frame = Frame(config_frame, bg=W_BGCOL)
 cal_frame.place(relx=0.80, rely=0.1, relheight=0.8, relwidth=0.15)
 
-calculate_btn = Button(cal_frame, text ="Preprocess Data", relief=RAISED, borderwidth=0, command=lib.calculate(DIR, algorithm == 2, k_value.get()))
+calculate_btn = Button(cal_frame, text ="Preprocess Data", relief=RAISED, borderwidth=0, command=l.calculate(DIR, algorithm.get() == 2, k_value.get()))
 calculate_btn.pack(side=LEFT, fill=X)
 
 
@@ -103,7 +101,6 @@ def analize_images():
 
     # get directory path
     path = Filedialog.askdirectory(initialdir=os.getcwd(), title="Select a Folder or File")
-    global load_img
   
     # get all images paths (names)
     images = glob.glob(path + '/*.jp*g')
@@ -113,10 +110,20 @@ def analize_images():
 
         # forget button and load image label
         load_btn.place_forget()
+
+        image_label = Label(face_frame)
         image_label.pack(side=TOP)
-        image_btn.place(anchor=SE, relx=1, rely=.90, relwidth=0.25, relheight=0.07)
-        image_btn_stop.place(anchor=SE, relx=1, rely=1, relwidth=0.25, relheight=0.07)
+
+        image_ety_var = StringVar()
+        image_entry = Entry(face_frame, textvariable=image_ety_var)
         image_entry.place(anchor=W, relx=0, rely=0.915, relwidth=0.7, relheight=0.07)
+
+        image_btn_var = IntVar()
+        image_btn = Button(face_frame, text='Save Face', command=lambda: image_btn_var.set(1))
+        image_btn.place(anchor=SE, relx=1, rely=.90, relwidth=0.25, relheight=0.07)
+
+        image_btn_stop = Button(face_frame, text='Quit Loading', command=lambda: image_btn_var.set(2))
+        image_btn_stop.place(anchor=SE, relx=1, rely=1, relwidth=0.25, relheight=0.07)
 
         # calculate max resolution posible for image
         res = int(min(face_frame.winfo_height(), face_frame.winfo_width()) * 0.8)
@@ -136,24 +143,16 @@ def analize_images():
             if (image_btn_var.get() == 2):
                 break
 
-    # when no images or quit loading
-    if (image_btn_var.get() == 2):
-        image_label.pack_forget()
-        image_btn.place_forget()
-        image_btn_stop.place_forget()
-        image_entry.place_forget()
+        # when no images or quit loading
+        image_label.destroy()
+        image_btn.destroy()
+        image_btn_stop.destroy()
+        image_entry.destroy()
         load_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
 face_frame = Frame(load_frame, bg=W_BGCOL)
 face_frame.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.9)
-
-image_label = Label(face_frame)
-image_ety_var = StringVar()
-image_entry = Entry(face_frame, textvariable=image_ety_var)
-image_btn_var = IntVar()
-image_btn = Button(face_frame, text='Save Face', command=lambda: image_btn_var.set(1))
-image_btn_stop = Button(face_frame, text='Quit Loading', command=lambda: image_btn_var.set(2))
 
 load_btn = Button(face_frame, text='Select Image Folder...', command=analize_images)
 load_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
@@ -161,13 +160,94 @@ load_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 ####################### search layout #######################
 
+# search for the images prints results and more
+def search_coincidences(face):
+    res = int(results_frame.winfo_width() * 0.95 /2)
+
+    # set ups layout
+    in_image_label = Label(results_frame)
+    in_image_label.place(relx=0, rely=0, anchor=NW)
+    original_img = ImageTk.PhotoImage(Image.fromarray(face).resize((res,res),1))
+    in_image_label.config(image=original_img)
+
+    out_image_label = Label(results_frame)
+    out_image_label.place(relx=0, rely=0, anchor=NW)
+
+    result_label = Label(results_frame, bg=W_BGCOL, anchor=CENTER, fg=W_FGCOL)
+
+    image_btn_var = IntVar()
+    image_btn = Button(results_frame, text='Quit Search', command=lambda: image_btn_var.set(1))
+    image_btn.place(anchor=S, relx=0.5, rely=1)
+
+    # search for coincidences
+    (f, name, err) = l.search_image(face, DIR, algorithm.get() == 2)
+
+    # prints results
+    match_img = ImageTk.PhotoImage(Image.fromarray(f).resize((res,res),1))
+    out_image_label.config(image=match_img)
+    result_label.configure(text='Name: {} Error: {}'.format(name, err))
+    result_label.place(anchor=S, relx=0.5, rely=0.85)
 
 
+    image_btn.wait_variable(image_btn_var)
+    
+    # cleans layout
+    in_image_label.destroy()
+    out_image_label.destroy()
+    result_label.destroy()
+    image_btn.destroy()
+    search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
+# analizes a single image and selects only one face
+def analize_single_image():
+    # ask for image path
+    image = Filedialog.askopenfilename( initialdir=os.getcwd(), title="Select a File", filetypes=(("All Files", "*.*"), ("png files", "*.png"), ("jpg files", "*.jpg")))
+    if len(image) == 0:
+        return
+    
+    faces = l.extract_face(DIR, image, confidence_factor.get())
+    if (len(faces) == 0):
+        return
 
+    # set layout
+    search_btn.place_forget()
 
+    image_label = Label(results_frame)
+    image_label.pack(side=TOP)
 
+    image_btn_var = IntVar()
+    image_btn = Button(results_frame, text='Next Face', command=lambda: image_btn_var.set(1))
+    image_btn.place(anchor=SE, relx=0.9, rely=1, relwidth=0.375)
 
+    image_btn_stop = Button(results_frame, text='Search This Face', command=lambda: image_btn_var.set(2))
+    image_btn_stop.place(anchor=SW, relx=0.1, rely=1, relwidth=0.375)
+
+    # calculate max resolution posible for image
+    res = int(min(results_frame.winfo_height(), results_frame.winfo_width()) * 0.8)
+
+    # after extract get each face weait for button and save
+    for face in faces:
+        search_img = ImageTk.PhotoImage(Image.fromarray(face).resize((res,res),1))
+        image_label.config(image=search_img)
+        final_face = face
+        image_btn.wait_variable(image_btn_var)
+        if (image_btn_var.get() == 2):
+            break
+    
+    # unloads al widgets
+    image_label.destroy()
+    image_btn.destroy()
+    image_btn_stop.destroy()
+
+    # searches and shows results of the face
+    search_coincidences(final_face)
+    
+
+results_frame = Frame(search_frame, bg=W_BGCOL)
+results_frame.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.9)
+
+search_btn = Button(search_frame, text='Select Image ...', command=analize_single_image)
+search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 root.mainloop()

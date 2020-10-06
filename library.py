@@ -364,10 +364,9 @@ def get_matching_path(index, dir):
 # make all calculations por pca or kpca and save ohmspace
 # path - path to data
 # nval - number of eigenvalues to take from M
-# kpca - if true, use kpca. Optional
-def process_data(path, nval=6, kpca=False):
+def calculate(path, kpca, nval):
     # create the matrix A from the data
-    A = l.create_A(path)
+    A = create_A(path)
 
     # calculate and saves eigen values and vectors
     # (u, v) = l.calculate_pca_eigen(A, path, nval)
@@ -378,15 +377,32 @@ def process_data(path, nval=6, kpca=False):
 
     if kpca == False:
         # calculate and saves eigen values and vectors
-        (u, v) = l.calculate_pca_eigen(A, path, nval)
+        (u, v) = calculate_pca_eigen(A, path, nval)
 
         # creates and saves the ohm space
-        l.create_ohm_space(A, u, path)
+        create_ohm_space(A, u, path)
     else:
-        K = l.create_K(A)
+        K = create_K(A)
         
         # calculate and saves eigen values and vectors
-        (u, v) = l.calculate_kpca_eigen(K, path, nval)
+        (u, v) = calculate_kpca_eigen(K, path, nval)
 
         # creates and saves the ohm space
-        l.create_ohm_space(K, u, path, True)
+        create_ohm_space(K, u, path, True)
+
+
+# searches and returns face, name and error
+# the face matrix to search
+# path the path to database
+def search_image(face, path, kpca, threshold=float('Inf')):
+    # recognize the ohm image
+    ohm_img = get_ohm_image(face, path, kpca)
+
+    # searches for the index of the matching face
+    (i, err) = face_space_distance(ohm_img, path, threshold)
+
+    # gets the corresponding path given the index
+    match_path = get_matching_path(i, path)
+    similar_face = np.load(match_path)
+
+    return (np.reshape(similar_face, (50,50)), os.path.basename(match_path), err)
