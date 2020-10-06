@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import os
 import glob
+import math
 import tensorflow as tf
 from tensorflow import keras
 
@@ -392,25 +393,42 @@ def process_data(path, nval=6, kpca=False):
         # creates and saves the ohm space
         create_ohm_space(K, u, path, True)
 
-# TODO: DEBERIAMOS CREAR SIEMPRE EL MODELO? O GUARDARLO
-def create_nn_model(eigenfaces, face_labels, people_count):
-    model = keras.Sequential([
-    keras.layers.Dense(128, activation='relu'),  # 128 nodos de aprendizaje
-    keras.layers.Dense(people_count)             # cantidad de personas en la bd 
-    ])
+# def create_nn_model(eigenfaces, face_labels, people_count):
+#     model = keras.Sequential([
+#     keras.layers.Dense(128, activation='relu'),  # 128 nodos de aprendizaje
+#     keras.layers.Dense(people_count)             # cantidad de personas en la bd 
+#     ])
 
-    model.compile(optimizer ='adam',
+#     model.compile(optimizer ='adam',
+#               loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+#               metrics=['accuracy'])
+
+#     # callback = keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
+#     # model.fit(eigenfaces, face_labels, epochs=100, callbacks=[callback])
+#     model.fit(eigenfaces, face_labels, epochs=20, verbose=0)
+
+#     probability_model = keras.Sequential([model, 
+#                                          keras.layers.Softmax()])
+#     return probability_model
+
+def create_nn_model(eigenfaces, face_labels, people_count):
+    eigenfaces = keras.utils.normalize(eigenfaces, axis=1)
+
+    neurons1 = math.ceil(eigenfaces.shape[1] * 2 / 3 + people_count)
+    neurons2 = math.ceil(neurons1 / 2)
+
+    model = keras.models.Sequential()
+    model.add(keras.layers.Dense(neurons1, activation=tf.nn.relu))
+    model.add(keras.layers.Dense(neurons2, activation=tf.nn.relu))
+    model.add(keras.layers.Dense(people_count, activation=tf.nn.softmax))
+
+    model.compile(optimizer = keras.optimizers.Adam(lr=0.0001),
               loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-    # TODO: determinar epoch --> 20 va mejor, al menos con 11 personas x 8 fotos y en PCA
-    # callback = keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
-    # model.fit(eigenfaces, face_labels, epochs=100, callbacks=[callback])
-    model.fit(eigenfaces, face_labels, epochs=20, verbose=0)
+    model.fit(eigenfaces, face_labels, epochs=1500, verbose=0)
 
-    probability_model = keras.Sequential([model, 
-                                         keras.layers.Softmax()])
-    return probability_model
+    return model
 
 def get_max_prediction(eigenfaces, face_labels, input, people_count):
     # A partir de las eigenfaces y una imagen de entrada, determinar a qué persona pertenece la imagen de entrada
@@ -418,9 +436,9 @@ def get_max_prediction(eigenfaces, face_labels, input, people_count):
     # (eigenfaces, face_labels) 
     # (test_image, test_label)
 
+    input = keras.utils.normalize(np.expand_dims(input,0), axis=1)
+
     probability_model = create_nn_model(eigenfaces, face_labels, people_count)
-    
-    input = (np.expand_dims(input,0))
     
     predictions = probability_model.predict(input)
     

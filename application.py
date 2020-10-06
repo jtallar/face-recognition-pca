@@ -104,6 +104,8 @@ def popupresults(face):
     # Matching Probability Label
     label = Label(popup2, text='Matching Probability is: ' + str(prob), font=('bold', 14))
     label.grid(row=0, column=2)
+    
+    # print(os.path.basename(path), prob)
     # gets the corresponding path given the index
     # path = l.get_matching_path(i, args['path'])
 
@@ -180,6 +182,29 @@ def popupmessage(face):
     popup.wait_window()
     return user_text
 
+def open_directory_recog():
+    path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+    if path:
+        #this is a list with all the images' paths.
+        types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+        list_of_items = []
+        for t in types:
+            list_of_items.extend(glob.glob(path + t))
+        
+        # list_of_items = glob.glob(path + '/*.jpeg')
+        for file in list_of_items:
+            #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
+
+            # get faces
+            faces = l.extract_face(args['path'], file, args['confidence'])
+
+            print(file)
+            # save faces
+            for face in faces:
+                l.show_face(face)
+                #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+                name = popupresults(face)
+
 
 def open_directory():
     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
@@ -243,7 +268,11 @@ upload_image_label2.place(height=50, width=400, x=400, y=70)
 
 # Upload Image Button - for RECOGNIZE FACE section
 upload_image_button2 = Button(app, text="Open Image...", command=open_image)
-upload_image_button2.place(height=50, width=400, x=400, y=140)
+upload_image_button2.place(height=50, width=180, x=400, y=140)
+
+# Choose Directory Button - for UPLOAD DATA section
+upload_image_button = Button(app, text="Select folder...", command=open_directory_recog)
+upload_image_button.place(height=50, width=180, x=600, y=140)
 
 
 
