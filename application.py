@@ -98,47 +98,68 @@ calculate_btn.pack(side=LEFT, fill=X)
 
 ####################### loads layout #######################
 
-
+# analizes and saves images and bla
 def analize_images():
 
     # get directory path
     path = Filedialog.askdirectory(initialdir=os.getcwd(), title="Select a Folder or File")
     global load_img
-
-    # forget button and load image label
-    load_btn.place_forget()
-    image_label.pack(side=TOP)
-    image_btn.place(anchor=SE, relx=1, rely=1, relwidth=0.25, relheight=0.1)
-    image_entry.place(anchor=SW, relx=0, rely=1, relwidth=0.7, relheight=0.1)
-
-
-    # calculate max resolution posible for image
-    res = int(min(face_frame.winfo_height(), face_frame.winfo_width()) * 0.8)
-    
+  
     # get all images paths (names)
     images = glob.glob(path + '/*.jp*g')
-    for image in images:
-        faces = l.extract_face(DIR, image, confidence_factor.get())
 
-        # after extract get each face
-        for face in faces:
-            load_img = ImageTk.PhotoImage(Image.fromarray(face).resize((res,res),1))
-            image_label.config(image=load_img)
-            image_btn.wait_variable(image_btn_var)
+    # do only when images is not empty
+    if (len(images) != 0):
+
+        # forget button and load image label
+        load_btn.place_forget()
+        image_label.pack(side=TOP)
+        image_btn.place(anchor=SE, relx=1, rely=.90, relwidth=0.25, relheight=0.07)
+        image_btn_stop.place(anchor=SE, relx=1, rely=1, relwidth=0.25, relheight=0.07)
+        image_entry.place(anchor=W, relx=0, rely=0.915, relwidth=0.7, relheight=0.07)
+
+        # calculate max resolution posible for image
+        res = int(min(face_frame.winfo_height(), face_frame.winfo_width()) * 0.8)
+
+        for image in images:
+            faces = l.extract_face(DIR, image, confidence_factor.get())
+
+            # after extract get each face weait for button and save
+            for face in faces:
+                load_img = ImageTk.PhotoImage(Image.fromarray(face).resize((res,res),1))
+                image_label.config(image=load_img)
+                image_btn.wait_variable(image_btn_var)
+                if (image_btn_var.get() == 2):
+                    break
+                l.save_face(face, image_ety_var.get(), DIR)
+            
+            if (image_btn_var.get() == 2):
+                break
+
+    # when no images or quit loading
+    if (image_btn_var.get() == 2):
+        image_label.pack_forget()
+        image_btn.place_forget()
+        image_btn_stop.place_forget()
+        image_entry.place_forget()
+        load_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
 face_frame = Frame(load_frame, bg=W_BGCOL)
-face_frame.place(relx=0.1, rely=0.1, relwidth=0.8, relheight=0.8)
+face_frame.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.9)
 
 image_label = Label(face_frame)
-image_entry = Entry(face_frame)
+image_ety_var = StringVar()
+image_entry = Entry(face_frame, textvariable=image_ety_var)
 image_btn_var = IntVar()
 image_btn = Button(face_frame, text='Save Face', command=lambda: image_btn_var.set(1))
+image_btn_stop = Button(face_frame, text='Quit Loading', command=lambda: image_btn_var.set(2))
 
 load_btn = Button(face_frame, text='Select Image Folder...', command=analize_images)
 load_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
+####################### search layout #######################
 
 
 
