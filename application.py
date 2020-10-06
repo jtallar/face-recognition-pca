@@ -1,11 +1,11 @@
 from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import filedialog as Filedialog
+from datetime import timedelta, datetime
 import library as l
+import threading
 import glob
 import os
-
-
 
 W_RATIO = 1.5
 W_BGCOL ='#494949'
@@ -202,10 +202,19 @@ confidence_factor.set(0.2)
 cal_frame = Frame(config_frame, bg=W_BGCOL)
 cal_frame.place(relx=0.80, rely=0.1, relheight=0.8, relwidth=0.15)
 
+def change_search_btn_name():
+    calculate_btn.configure(text ="Preprocess Data")
+
 # used down below
 def wrapper():
     search_btn.configure(state=NORMAL)
     l.calculate(DIR, algorithm.get() == 2, k_value.get())
+    calculate_btn.configure(text='Data Processed!')
+
+    now = datetime.now()
+    run_at = now + timedelta(0, 3)
+    delay = (run_at - now).total_seconds()
+    threading.Timer(delay, change_search_btn_name).start()
 
 calculate_btn = Button(cal_frame, text ="Preprocess Data", relief=RAISED, borderwidth=0, command=wrapper)
 calculate_btn.pack(side=LEFT, fill=X)
