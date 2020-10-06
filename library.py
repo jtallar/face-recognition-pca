@@ -404,5 +404,6 @@ def search_image(face, path, kpca, threshold=float('Inf')):
     # gets the corresponding path given the index
     match_path = get_matching_path(i, path)
     similar_face = np.load(match_path)
+    (root, _) = os.path.split(match_path)
 
-    return (np.reshape(similar_face, (50,50)), os.path.basename(match_path), err)
+    return (np.reshape(similar_face, (50,50)), os.path.basename(root), err)

@@ -171,7 +171,7 @@ def search_coincidences(face):
     in_image_label.config(image=original_img)
 
     out_image_label = Label(results_frame)
-    out_image_label.place(relx=0, rely=0, anchor=NW)
+    out_image_label.place(relx=1, rely=0, anchor=NE)
 
     result_label = Label(results_frame, bg=W_BGCOL, anchor=CENTER, fg=W_FGCOL)
 
@@ -227,11 +227,18 @@ def analize_single_image():
     res = int(min(results_frame.winfo_height(), results_frame.winfo_width()) * 0.8)
 
     # after extract get each face weait for button and save
+    i = 1
     for face in faces:
+        # disables next on last or only face
+        if (i == len(faces)):
+            image_btn.configure(state=DISABLED)
+        i += 1
+
         search_img = ImageTk.PhotoImage(Image.fromarray(face).resize((res,res),1))
         image_label.config(image=search_img)
         final_face = face
         image_btn.wait_variable(image_btn_var)
+        
         if (image_btn_var.get() == 2):
             break
     
