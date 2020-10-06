@@ -125,7 +125,6 @@ def create_K(A):
 
 # calculates the eigenvalues and eigenvectos given a matrix
 # returns touple (u, s), being u eigenvectors and s the eigenvalues
-# TODO to be replaced with our function
 def automatic_eigen(a):
     u, s, vh = np.linalg.svd(a, full_matrices=True)
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
@@ -134,9 +133,12 @@ def automatic_eigen(a):
 # calculates the eigenvalues and eigenvectors for the covariance matrix in pca
 # transforming the matrix eigen to the covariance eigen
 def calculate_pca_eigen(a, dir, n):
-    # TODO: CHANGE TO manual_eigen
-    (u, s) = automatic_eigen(np.dot(np.transpose(a), a))
+    (u, s) = manual_eigen(np.dot(np.transpose(a), a))
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
+
+    # s = np.asarray(s)
+    # (u2, s2) = automatic_eigen(np.dot(np.transpose(a), a))
+    # print("\nDif\n", abs(u2) - abs(u), abs(s2) - abs(s))
 
     u = np.dot(a, u)
     for i in range(0, len(u[0])):
@@ -166,8 +168,7 @@ def calculate_pca_eigen(a, dir, n):
 # calculates the eigenvalues and eigenvectors for the K matrix in kpca
 # returns eigenvalues and eigenvectors of the K matrix, not the Covariance matrix
 def calculate_kpca_eigen(k, dir, n):
-    # TODO: CHANGE TO manual_eigen
-    (u, s) = automatic_eigen(k)
+    (u, s) = manual_eigen(k)
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
 
     # FIXME: UNCOMMENT TO TEST K VALUES
@@ -191,7 +192,6 @@ def calculate_kpca_eigen(k, dir, n):
 
     return (u, s)
 
-# TODO: VER QUE ONDA ESE tol
 def rref(B, tol=200000):
   A = B.copy()
   rows, cols = A.shape
@@ -238,8 +238,7 @@ def rref(B, tol=200000):
 # algorithm that calculates eigenvalues and eigenvectors given matrix a
 # return eigenvalues and k eigenvectors 
 def manual_eigen(a):
-    # TODO: STOP USING roots and poly
-    s = np.roots(np.poly(a))                    # roots of characteristic polynom
+    s = sorted_eigen_values(a)
     N = len(a)                                  # set N as matrix size
     vector = []                    # initialize result vectors matrix
     for i in range(N):
@@ -257,6 +256,43 @@ def manual_eigen(a):
     
     vector = np.transpose(vector)
     return (vector, s)
+
+ITERATION_PRECISION = 10 ** -8
+
+# Given a diagonalizable matrix, it returns a list with its eigenvalues in descending absolute value
+def sorted_eigen_values(A):
+    n = len(A)
+    Q, R = householder_QR(A)
+    matrix = np.copy(A)
+    eigen_values = np.diagonal(matrix)
+    for k in range(300):
+        Q, R = householder_QR(matrix)
+        matrix = R.dot(Q)
+        new_eigen_values = np.diagonal(matrix)
+        if np.linalg.norm(np.subtract(new_eigen_values,eigen_values)) < ITERATION_PRECISION:
+            break
+        eigen_values = new_eigen_values
+
+    return sorted(eigen_values, key=abs)[::-1]
+
+# Householder QR method as described here:
+# https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
+def householder_QR(A):
+    m = len(A)
+    n = len(A[0])
+    Q = np.identity(m)
+    R = np.copy(A)
+    for j in range(n):
+        normx = np.linalg.norm(R[j:m,j])
+        s = - np.sign(R[j,j])
+        u1 = R[j,j] - s * normx
+        w = R[j:m, j].reshape((-1,1)) / u1
+        w[0] = 1
+        tau = -s * u1 / normx
+        R[j:m, :] = R[j:m, :] - (tau * w) * np.dot(w.reshape((1,-1)),R[j:m,:])
+        Q[:, j:n] = Q[:,j:n] - (Q[:,j:m].dot(w)).dot(tau*w.transpose())
+
+    return Q, R
 
 # fi is an N^2 vector, Fi = ri - Y
 # eigenvectors is an N^2 x K, the K best eigenvectors
