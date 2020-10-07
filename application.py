@@ -83,6 +83,26 @@ def search_coincidences(face):
     search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 # analizes a single image and selects only one face
+def analize_directory():
+    # ask for image path
+    path = Filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+    if not path:
+        return
+    
+    types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+    list_of_items = []
+    for t in types:
+        list_of_items.extend(glob.glob(path + t))
+
+    for file in list_of_items:
+        faces = l.extract_face(DIR, file, confidence_factor.get())
+        if (len(faces) != 0):
+            print(file)
+            for face in faces:
+                (f, name, prob) = l.search_image(face, DIR, algorithm.get() == 2)
+                print(name, prob)
+
+# analizes a single image and selects only one face
 def analize_single_image():
     # ask for image path
     image = Filedialog.askopenfilename( initialdir=os.getcwd(), title="Select a File", filetypes=(("All Files", "*.*"), ("png files", "*.png"), ("jpg files", "*.jpg")))
@@ -138,6 +158,7 @@ results_frame = Frame(search_frame, bg=W_BGCOL)
 results_frame.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.9)
 
 search_btn = Button(search_frame, text='Select Image ...', command=analize_single_image)
+# search_btn = Button(search_frame, text='Select Image ...', command=analize_directory)
 search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
@@ -275,7 +296,10 @@ def analize_images():
         return
 
     # get all images paths (names)
-    images = glob.glob(path + '/*.jp*g')
+    types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+    images = []
+    for t in types:
+        images.extend(glob.glob(path + t))
 
     # do only when images is not empty
     if (len(images) == 0):

@@ -106,7 +106,7 @@ def create_A(dir):
 # Kernel function used to create kernel matrix
 # (X^T * Y + 1) ^ p
 def kernel_func(x, y):
-    p = 2
+    p = 1
     return (np.dot(np.transpose(x), y) + 1) ** p
 
 # creates the K matrix for kpca
@@ -171,15 +171,6 @@ def calculate_kpca_eigen(k, dir, n):
     (u, s) = manual_eigen(k)
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
 
-    # FIXME: UNCOMMENT TO TEST K VALUES
-    # cov = np.dot(a, np.transpose(a))
-    # aux = np.dot(u, (np.diag(s) ** 0.5))
-    # for i in range(0, len(u[0])):
-    #     b = np.dot(aux[:,0:i], np.transpose(aux[:,0:i]))
-    #     for j in range(0, len(u[0])):
-    #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
-
-    # TODO: VER COMO DA SIN ESTO, porque me achica mucho los autovectores
     for i in range(0, len(u[0])):
         u[:,i] = u[:,i] / (np.linalg.norm(u[:,i], 2) * (np.sqrt(abs(s[i]))))
 
@@ -188,7 +179,7 @@ def calculate_kpca_eigen(k, dir, n):
 
     # saves to files the eigen values and vectors
     np.save(os.path.join(dir, 'eigenvector'), u)
-    np.save(os.path.join(dir, 'eigenvalues'), s / len(k)) # Save eigenvalues of Covariance
+    np.save(os.path.join(dir, 'eigenvalues'), np.asarray(s) / len(k)) # Save eigenvalues of Covariance
 
     return (u, s)
 
