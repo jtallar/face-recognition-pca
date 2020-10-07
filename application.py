@@ -64,12 +64,12 @@ def search_coincidences(face):
     image_btn.place(anchor=S, relx=0.5, rely=1)
 
     # search for coincidences
-    (f, name, err) = l.search_image(face, DIR, algorithm.get() == 2)
+    (f, name, prob) = l.search_image(face, DIR, algorithm.get() == 2)
 
     # prints results
     match_img = ImageTk.PhotoImage(Image.fromarray(f).resize((res,res),1))
     out_image_label.config(image=match_img)
-    result_label.configure(text='Name: {} Error: {}'.format(name, err))
+    result_label.configure(text='Name: {} Probability: {}'.format(name, prob))
     result_label.place(anchor=S, relx=0.5, rely=0.85)
 
 
@@ -81,31 +81,6 @@ def search_coincidences(face):
     result_label.destroy()
     image_btn.destroy()
     search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
-
-
-
-
-# def popupresults(face):
-    #Build windows
-#    popup2 = tk.Toplevel(app)
- #   popup2.wm_title("Face recognition results")
-  #  popup2.geometry('400x100+600+480')
-
-    # LLAMAR A LA FUNCION QUE NOS DA LOS RESULTADOS
-
-    # recognize the ohm image
-   # ohm_img = l.get_ohm_image(face, args['path'], args['kpca'])
-
-    #(path, prob) = l.classify(ohm_img, args['path'])
-
-    # searches for the index of the matching face
-    # (i, err) = l.face_space_distance(ohm_img, args['path'])
-    # Matching Probability Label
-    #label = Label(popup2, text='Matching Probability is: ' + str(prob), font=('bold', 14))
-    #label.grid(row=0, column=2)
-    
-    # print(os.path.basename(path), prob)
-
 
 # analizes a single image and selects only one face
 def analize_single_image():
@@ -177,54 +152,54 @@ def deactivate_search():
     return time < os.path.getmtime(os.path.join(DIR, 'eigenvector.npy'))
 
 
-def open_directory_recog():
-    path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
-    if path:
-        #this is a list with all the images' paths.
-        types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
-        list_of_items = []
-        for t in types:
-            list_of_items.extend(glob.glob(path + t))
+# def open_directory_recog():
+#     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+#     if path:
+#         #this is a list with all the images' paths.
+#         types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+#         list_of_items = []
+#         for t in types:
+#             list_of_items.extend(glob.glob(path + t))
         
-        # list_of_items = glob.glob(path + '/*.jpeg')
-        for file in list_of_items:
-            #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
+#         # list_of_items = glob.glob(path + '/*.jpeg')
+#         for file in list_of_items:
+#             #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
 
-            # get faces
-            faces = l.extract_face(args['path'], file, args['confidence'])
+#             # get faces
+#             faces = l.extract_face(args['path'], file, args['confidence'])
 
-            print(file)
-            # save faces
-            for face in faces:
-                l.show_face(face)
-                #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
-                name = popupresults(face)
+#             print(file)
+#             # save faces
+#             for face in faces:
+#                 l.show_face(face)
+#                 #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+#                 name = popupresults(face)
 
 
-def open_directory():
-    path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
-    if path:
-        #this is a list with all the images' paths.
-        types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
-        list_of_items = []
-        for t in types:
-            list_of_items.extend(glob.glob(path + t))
+# def open_directory():
+#     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+#     if path:
+#         #this is a list with all the images' paths.
+#         types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+#         list_of_items = []
+#         for t in types:
+#             list_of_items.extend(glob.glob(path + t))
         
-        # list_of_items = glob.glob(path + '/*.jpeg')
-        for file in list_of_items:
-            #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
+#         # list_of_items = glob.glob(path + '/*.jpeg')
+#         for file in list_of_items:
+#             #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
 
-            # get faces
-            faces = l.extract_face(args['path'], file, args['confidence'])
+#             # get faces
+#             faces = l.extract_face(args['path'], file, args['confidence'])
 
-            # save faces
-            for face in faces:
-                #l.show_face(face)
-                #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
-                name = popupmessage(face)
-                l.save_face(face, name.get(), args['path'])
+#             # save faces
+#             for face in faces:
+#                 #l.show_face(face)
+#                 #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+#                 name = popupmessage(face)
+#                 l.save_face(face, name.get(), args['path'])
 
-        l.process_data(args['path'], args['nval'], args['kpca'])
+#         l.process_data(args['path'], args['nval'], args['kpca'])
 
 if deactivate_search():  
     search_btn.configure(state=DISABLED)
@@ -252,9 +227,9 @@ label = Label(k_frame, text='K Value', bg=W_BGCOL, fg=W_FGCOL)
 label.pack(anchor=CENTER)
 
 k_value = IntVar()
-scale = Scale(k_frame, variable = k_value, resolution=1, orient=HORIZONTAL, from_=0, to=50, bg=W_BGCOL, fg=W_FGCOL, highlightbackground=W_BGCOL)
+scale = Scale(k_frame, variable = k_value, resolution=1, orient=HORIZONTAL, from_=0, to=100, bg=W_BGCOL, fg=W_FGCOL, highlightbackground=W_BGCOL)
 scale.pack(anchor=CENTER, fill=X)
-k_value.set(10)
+k_value.set(30)
 
 # confidence factor selection fram and layout
 c_frame = Frame(config_frame, bg=W_BGCOL)
@@ -288,13 +263,6 @@ def wrapper():
 
 calculate_btn = Button(cal_frame, text ="Preprocess Data", relief=RAISED, borderwidth=0, command=wrapper)
 calculate_btn.pack(side=LEFT, fill=X)
-# Upload Image Button - for RECOGNIZE FACE section
-# upload_image_button2 = Button(app, text="Open Image...", command=open_image)
-# upload_image_button2.place(height=50, width=180, x=400, y=140)
-
-# Choose Directory Button - for UPLOAD DATA section
-upload_image_button = Button(app, text="Select folder...", command=open_directory_recog)
-upload_image_button.place(height=50, width=180, x=600, y=140)
 
 ####################### loads layout #######################
 

@@ -428,24 +428,8 @@ def calculate(path, kpca, nval):
         # creates and saves the ohm space
         create_ohm_space(K, u, path, True)
 
-# def create_nn_model(eigenfaces, face_labels, people_count):
-#     model = keras.Sequential([
-#     keras.layers.Dense(128, activation='relu'),  # 128 nodos de aprendizaje
-#     keras.layers.Dense(people_count)             # cantidad de personas en la bd 
-#     ])
-
-#     model.compile(optimizer ='adam',
-#               loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-#               metrics=['accuracy'])
-
-#     # callback = keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
-#     # model.fit(eigenfaces, face_labels, epochs=100, callbacks=[callback])
-#     model.fit(eigenfaces, face_labels, epochs=20, verbose=0)
-
-#     probability_model = keras.Sequential([model, 
-#                                          keras.layers.Softmax()])
-#     return probability_model
-
+# create neural network model with the eigenfaces, their labels
+# and the number of distinct people
 def create_nn_model(eigenfaces, face_labels, people_count):
     eigenfaces = keras.utils.normalize(eigenfaces, axis=1)
 
@@ -465,6 +449,7 @@ def create_nn_model(eigenfaces, face_labels, people_count):
 
     return model
 
+# build neural network and get max prediction from an input
 def get_max_prediction(eigenfaces, face_labels, input, people_count):
     # A partir de las eigenfaces y una imagen de entrada, determinar a qué persona pertenece la imagen de entrada
 
@@ -481,7 +466,7 @@ def get_max_prediction(eigenfaces, face_labels, input, people_count):
 
     return (max_prob, predictions[0][max_prob])
 
-
+# classify an ohm_img using the saved ohm-space
 def classify(ohm_img, dir, threshold=float('Inf')):
 
     # load ohm space and eigen values
@@ -503,8 +488,6 @@ def classify(ohm_img, dir, threshold=float('Inf')):
     (index, prob) = get_max_prediction(np.transpose(ohm_space), m, ohm_img, len(unique_labels))
     return (unique_labels[index], prob)
 
-    
-
 # searches and returns face, name and error
 # the face matrix to search
 # path the path to database
@@ -512,12 +495,10 @@ def search_image(face, path, kpca, threshold=float('Inf')):
     # recognize the ohm image
     ohm_img = get_ohm_image(face, path, kpca)
 
-    # searches for the index of the matching face
-    (i, err) = face_space_distance(ohm_img, path, threshold)
+    # gets the correspondig path of the matching face
+    (match_path, prob) = classify(ohm_img, path, threshold)
 
-    # gets the corresponding path given the index
-    match_path = get_matching_path(i, path)
-    similar_face = np.load(match_path)
-    (root, _) = os.path.split(match_path)
+    # get a similar face, first npy from path
+    similar_face = np.load(match_path + "/0.npy")
 
-    return (np.reshape(similar_face, (50,50)), os.path.basename(root), err)
+    return (np.reshape(similar_face, (50,50)), os.path.basename(match_path), prob)
