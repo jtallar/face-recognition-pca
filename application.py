@@ -250,7 +250,7 @@ label.pack(anchor=CENTER)
 k_value = IntVar()
 scale = Scale(k_frame, variable = k_value, resolution=1, orient=HORIZONTAL, from_=0, to=100, bg=W_BGCOL, fg=W_FGCOL, highlightbackground=W_BGCOL)
 scale.pack(anchor=CENTER, fill=X)
-k_value.set(30)
+k_value.set(60)
 
 # confidence factor selection fram and layout
 c_frame = Frame(config_frame, bg=W_BGCOL)
