@@ -1,319 +1,363 @@
 from tkinter import *
-from tkinter import messagebox, filedialog, simpledialog
-#from db import Database
 from PIL import Image, ImageTk
-import glob
-import tkinter as tk
+from tkinter import filedialog as Filedialog
+from datetime import timedelta, datetime
 import library as l
+import threading
+import glob
 import os
 
-DATABASE_PATH = "/Users/geronimomaspero/Desktop/mna-tpe1/data"
-INITIAL_DIR = "/Users/geronimomaspero/Desktop/mna-tpe1"
+W_RATIO = 1.5
+W_BGCOL ='#494949'
+W_FGCOL = 'lightgray'
+
+DIR = 'data'
 
 
-#db = Database('store.db')
+# generates centered window
+# w the window opened
+# ratio the window ratio to mantain
+# returns window geometry [width]x[height]+[startx]+[starty]
+def get_window_geo(w, ratio):
+    width = int(w.winfo_screenwidth() / ratio)
+    height = int(w.winfo_screenheight() / ratio)
+    startx = int((w.winfo_screenwidth() - width) / 2)
+    starty = int((w.winfo_screenheight() - height) / 2)
+    return "{}x{}+{}+{}".format(width, height, startx, starty)
+
+# set defaults on window app
+root = Tk()
+root.geometry(get_window_geo(root, W_RATIO))
+root.configure(bg=W_BGCOL)
+root.title('Face Recognition - Probeta Technologies')
+
+# render basic layout
+load_frame = LabelFrame(root, text="Load Faces", bg=W_BGCOL, fg=W_FGCOL)
+load_frame.place(relx=0.04, rely=0.04, relheight=0.65, relwidth=0.45)
+
+search_frame = LabelFrame(root, text="Search Faces", bg=W_BGCOL, fg=W_FGCOL)
+search_frame.place(relx=0.51, rely=0.04, relheight=0.65, relwidth=0.45)
+
+config_frame = LabelFrame(root, text="Configurations", bg=W_BGCOL, fg=W_FGCOL)
+config_frame.place(relx=0.04, rely=0.71, relheight=0.25, relwidth=0.92)
 
 
+####################### search layout #######################
+
+# search for the images prints results and more
+def search_coincidences(face):
+    res = int(results_frame.winfo_width() * 0.95 /2)
+
+    # set ups layout
+    in_image_label = Label(results_frame)
+    in_image_label.place(relx=0, rely=0, anchor=NW)
+    original_img = ImageTk.PhotoImage(Image.fromarray(face).resize((res,res),1))
+    in_image_label.config(image=original_img)
+
+    out_image_label = Label(results_frame)
+    out_image_label.place(relx=1, rely=0, anchor=NE)
+
+    result_label = Label(results_frame, bg=W_BGCOL, anchor=CENTER, fg=W_FGCOL)
+
+    image_btn_var = IntVar()
+    image_btn = Button(results_frame, text='Quit Search', command=lambda: image_btn_var.set(1))
+    image_btn.place(anchor=S, relx=0.5, rely=1)
+
+    # search for coincidences
+    (f, name, prob) = l.search_image(face, DIR, algorithm.get() == 2)
+
+    # prints results
+    match_img = ImageTk.PhotoImage(Image.fromarray(f).resize((res,res),1))
+    out_image_label.config(image=match_img)
+    result_label.configure(text='Name: {} Probability: {}'.format(name, prob))
+    result_label.place(anchor=S, relx=0.5, rely=0.85)
 
 
-#---------------------# FUNCTIONS #---------------------#
-
-# def populate_list():
-#     parts_list.delete(0, END)
-#     for row in db.fetch():
-#         parts_list.insert(END, row)
-
-
-# def add_item():
-#     if part_text.get() == '' or customer_text.get() == '' or retailer_text.get() == '' or price_text.get() == '':
-#         messagebox.showerror('Required Fields', 'Please include all fields')
-#         return
-#     db.insert(part_text.get(), customer_text.get(),
-#               retailer_text.get(), price_text.get())
-#     parts_list.delete(0, END)
-#     parts_list.insert(END, (part_text.get(), customer_text.get(),
-#                             retailer_text.get(), price_text.get()))
-#     clear_text()
-#     populate_list()
-
-
-# def select_item(event):
-#     try:
-#         global selected_item
-#         index = parts_list.curselection()[0]
-#         selected_item = parts_list.get(index)
-
-#         part_entry.delete(0, END)
-#         part_entry.insert(END, selected_item[1])
-#         customer_entry.delete(0, END)
-#         customer_entry.insert(END, selected_item[2])
-#         retailer_entry.delete(0, END)
-#         retailer_entry.insert(END, selected_item[3])
-#         price_entry.delete(0, END)
-#         price_entry.insert(END, selected_item[4])
-#     except IndexError:
-#         pass
-
-
-# def remove_item():
-#     db.remove(selected_item[0])
-#     clear_text()
-#     populate_list()
-
-
-# def update_item():
-#     db.update(selected_item[0], part_text.get(), customer_text.get(),
-#               retailer_text.get(), price_text.get())
-#     populate_list()
-
-
-# def clear_text():
-#     part_entry.delete(0, END)
-#     customer_entry.delete(0, END)
-#     retailer_entry.delete(0, END)
-#     price_entry.delete(0, END)
-
-
-#
-# -------------------------------------- CODIGO PROBETA -----------------------------------------------------------------------------------
-#
-def popupresults(face):
-    #Build windows
-    popup2 = tk.Toplevel(app)
-    popup2.wm_title("Face recognition results")
-    popup2.geometry('400x100+600+480')
-
-    # LLAMAR A LA FUNCION QUE NOS DA LOS RESULTADOS
-
-    # recognize the ohm image
-    ohm_img = l.get_ohm_image(face, DATABASE_PATH)
-
-    # searches for the index of the matching face
-    (i, err) = l.face_space_distance(ohm_img, DATABASE_PATH)
-    # Error Label
-    label = Label(popup2, text='Error is: ' + str(err), font=('bold', 14))
-    label.grid(row=0, column=2)
-    # gets the corresponding path given the index
-    path = l.get_matching_path(i, DATABASE_PATH)
-
-    path2 = os.path.dirname(path)
-    # Path Label
-    label = Label(popup2, text= os.path.basename(path2), font=('bold', 14))
-    label.grid(row=1, column=2)
+    image_btn.wait_variable(image_btn_var)
     
-    # IMPRIMIR LOS RESULTADOS 
+    # cleans layout
+    in_image_label.destroy()
+    out_image_label.destroy()
+    result_label.destroy()
+    image_btn.destroy()
+    search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
-    # Display save button
-    button_save = Button(popup2, text="Next", command=popup2.destroy)
-    button_save.grid(row=3, column=2)
-
-    #when this popup is done waiting for user's input, it will return
-    popup2.wait_window()
-
-
-        
-def open_image():
-    global my_image
-    image_path = filedialog.askopenfilename( initialdir=INITIAL_DIR, title="Select a File", filetypes=( ("All Files", "*.*"), ("png files", "*.png"), ("jpg files", "*.jpg")))
-    my_image = ImageTk.PhotoImage(Image.open(image_path))
-    #creo un label y a ese label le cargo la imagen
-    my_image_label = Label(image=my_image)
-    #Ubico a mi label en pantalla
-    my_image_label.place(height=400, width=400,x=400,y=200)
-
-    # get faces
-    faces = l.extract_face(DATABASE_PATH, image_path, 0.2)
-
-    # Now we iterate in all the faces
-    for face in faces:
-        l.show_face(face)
-        #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
-        name = popupresults(face)
-
+# analizes a single image and selects only one face
+def analize_directory():
+    # ask for image path
+    path = Filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+    if not path:
+        return
     
+    types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+    list_of_items = []
+    for t in types:
+        list_of_items.extend(glob.glob(path + t))
 
-        
-
-        
-def popupmessage(face):
-    #Build windows
-    popup = tk.Toplevel(app)
-    popup.wm_title("Name Assignment")
-    popup.geometry('400x100+600+480')
-
-    # Display Label
-    label = Label(popup, text="Please assign the name of the person above", font=('bold', 14))
-    label.grid(row=0, column=2)
-
-    # Obtain image from the path_variable (argument) 
-    #global my_image2
-    #my_image2 = ImageTk.PhotoImage(Image.open(path_variable))
-    
-    # Display image in the popup
-    #my_image_label2 = Label(popup,image=my_image2)
-    #my_image_label2.grid(row=1, column=2)
-
-    l.show_face(face)
-
-    # Display input box
-    user_text = StringVar()
-    user_entry = Entry(popup, textvariable=user_text)
-    user_entry.grid(row=2, column=2)
-
-    # Display save button
-    button_save = Button(popup, text="Save", command=popup.destroy)
-    button_save.grid(row=3, column=2)
-
-    #when this popup is done waiting for user's input, it will return
-    popup.wait_window()
-    return user_text
-
-
-def open_directory():
-    path = filedialog.askdirectory( initialdir=INITIAL_DIR, title="Select a File")
-    #this is a list with all the images' paths.
-    list_of_items = glob.glob(path + '/*.jpeg')
     for file in list_of_items:
-        #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
+        faces = l.extract_face(DIR, file, confidence_factor.get())
+        if (len(faces) != 0):
+            print(file)
+            for face in faces:
+                (f, name, prob) = l.search_image(face, DIR, algorithm.get() == 2)
+                print(name, prob)
 
-        # get faces
-        faces = l.extract_face(DATABASE_PATH, file, 0.2)
+# analizes a single image and selects only one face
+def analize_single_image():
+    # ask for image path
+    image = Filedialog.askopenfilename( initialdir=os.getcwd(), title="Select a File", filetypes=(("All Files", "*.*"), ("png files", "*.png"), ("jpg files", "*.jpg")))
+    if not image:
+        return
+    
+    faces = l.extract_face(DIR, image, confidence_factor.get())
+    if (len(faces) == 0):
+        return
 
-        # save faces
-        for face in faces:
-            #l.show_face(face)
-            #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
-            name = popupmessage(face)
-            l.save_face(face, name.get(), DATABASE_PATH)
+    # set layout
+    search_btn.place_forget()
 
-    #Calculamos todo
-    # create the matrix A from the data
-    A = l.create_A(DATABASE_PATH)
+    image_label = Label(results_frame)
+    image_label.pack(side=TOP)
 
-    # calculate and saves eigen values and vectors
-    (u, v) = l.calculate_eigen(A, DATABASE_PATH )
+    image_btn_var = IntVar()
+    image_btn = Button(results_frame, text='Next Face', command=lambda: image_btn_var.set(1))
+    image_btn.place(anchor=SE, relx=0.9, rely=1, relwidth=0.375)
 
-    # creates and saves the ohm space
-    l.create_ohm_space(A, u, DATABASE_PATH)
+    image_btn_stop = Button(results_frame, text='Search This Face', command=lambda: image_btn_var.set(2))
+    image_btn_stop.place(anchor=SW, relx=0.1, rely=1, relwidth=0.375)
 
-        
+    # calculate max resolution posible for image
+    res = int(min(results_frame.winfo_height(), results_frame.winfo_width()) * 0.8)
 
+    # after extract get each face weait for button and save
+    i = 1
+    for face in faces:
+        # disables next on last or only face
+        if (i == len(faces)):
+            image_btn.configure(state=DISABLED)
+        i += 1
 
+        search_img = ImageTk.PhotoImage(Image.fromarray(face).resize((res,res),1))
+        image_label.config(image=search_img)
+        final_face = face
+        image_btn.wait_variable(image_btn_var)
+
+        if (image_btn_var.get() == 2):
+            break
+    
+    # unloads al widgets
+    image_label.destroy()
+    image_btn.destroy()
+    image_btn_stop.destroy()
+
+    # searches and shows results of the face
+    search_coincidences(final_face)
     
 
+results_frame = Frame(search_frame, bg=W_BGCOL)
+results_frame.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.9)
+
+search_btn = Button(search_frame, text='Select Image ...', command=analize_single_image)
+# search_btn = Button(search_frame, text='Select Image ...', command=analize_directory)
+search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
+# checks if calculated data is actualized
+def deactivate_search():
+    time = 0
+    files = glob.glob(DIR + '/persons/*/*.npy')
+    for f in files:
+        file_time = os.path.getmtime(f)
+        if  file_time > time:
+            time = file_time
+    return time < os.path.getmtime(os.path.join(DIR, 'eigenvector.npy'))
 
 
-#---------------------# FUNCTIONS #---------------------#
+# def open_directory_recog():
+#     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+#     if path:
+#         #this is a list with all the images' paths.
+#         types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+#         list_of_items = []
+#         for t in types:
+#             list_of_items.extend(glob.glob(path + t))
+        
+#         # list_of_items = glob.glob(path + '/*.jpeg')
+#         for file in list_of_items:
+#             #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
 
-# Create window object
-app = tk.Tk()
+#             # get faces
+#             faces = l.extract_face(args['path'], file, args['confidence'])
 
-#---------------------# FRONT END #---------------------#
-
-#Quit button
-button_quit = Button(app, text="Exit Program", command=app.quit)
-button_quit.place(height=50, width=600, x=100, y=730 )
-
-# UPLOAD DATA TITLE
-title_upload_data = Label(app, text='UPLOAD DATA', font=('bold', 14), pady=20)
-title_upload_data.place(height=50, width=400, x=0, y=0)
-
-# RECOGNIZE FACE TITLE
-title_recognize_face = Label(app, text='RECOGNIZE FACE', font=('bold', 14), pady=20)
-title_recognize_face.place(height=50, width=400, x=400, y=0)
-
-
-# Choose Directory Text - for UPLOAD DATA section
-upload_image_label = Label(app, text='Select folder with all your images', font=('bold', 14), pady=20)
-upload_image_label.place(height=50, width=400, x=0, y=70)
-
-# Choose Directory Button - for UPLOAD DATA section
-upload_image_button = Button(app, text="Select folder...", command=open_directory)
-upload_image_button.place(height=50, width=400, x=0, y=140)
-
-# Upload Image Text - for RECOGNIZE FACE section
-upload_image_label2 = Label(app, text='Upload Image', font=('bold', 14))
-upload_image_label2.place(height=50, width=400, x=400, y=70)
+#             print(file)
+#             # save faces
+#             for face in faces:
+#                 l.show_face(face)
+#                 #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+#                 name = popupresults(face)
 
 
-# Upload Image Button - for RECOGNIZE FACE section
-upload_image_button2 = Button(app, text="Open Image...", command=open_image)
-upload_image_button2.place(height=50, width=400, x=400, y=140)
+# def open_directory():
+#     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+#     if path:
+#         #this is a list with all the images' paths.
+#         types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+#         list_of_items = []
+#         for t in types:
+#             list_of_items.extend(glob.glob(path + t))
+        
+#         # list_of_items = glob.glob(path + '/*.jpeg')
+#         for file in list_of_items:
+#             #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
+
+#             # get faces
+#             faces = l.extract_face(args['path'], file, args['confidence'])
+
+#             # save faces
+#             for face in faces:
+#                 #l.show_face(face)
+#                 #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+#                 name = popupmessage(face)
+#                 l.save_face(face, name.get(), args['path'])
+
+#         l.process_data(args['path'], args['nval'], args['kpca'])
+
+if deactivate_search():  
+    search_btn.configure(state=DISABLED)
+####################### configurations layout #######################
+# algorithm selection frame and layout
+algorithm = IntVar()
+alg_frame = Frame(config_frame, bg=W_BGCOL)
+alg_frame.place(relx=0.05, rely=0.2, relheight=0.8, relwidth=0.2)
+
+label = Label(alg_frame, text='Pre-Processing Algorithm', bg=W_BGCOL, fg=W_FGCOL)
+label.pack(anchor=CENTER)
+
+pca_btn = Radiobutton(alg_frame, text='PCA', variable=algorithm, value=1, bg=W_BGCOL, fg=W_FGCOL, highlightbackground=W_BGCOL, selectcolor=W_BGCOL)
+pca_btn.pack(anchor=W)
+
+kpca_btn = Radiobutton(alg_frame, text='KPCA', variable=algorithm, value=2, bg=W_BGCOL, fg=W_FGCOL, highlightbackground=W_BGCOL, selectcolor=W_BGCOL)
+kpca_btn.pack(anchor=W)
+algorithm.set(1)
+
+# k selection fram and layout
+k_frame = Frame(config_frame, bg=W_BGCOL)
+k_frame.place(relx=0.3, rely=0.25, relheight=0.5, relwidth=0.2)
+
+label = Label(k_frame, text='K Value', bg=W_BGCOL, fg=W_FGCOL)
+label.pack(anchor=CENTER)
+
+k_value = IntVar()
+scale = Scale(k_frame, variable = k_value, resolution=1, orient=HORIZONTAL, from_=0, to=100, bg=W_BGCOL, fg=W_FGCOL, highlightbackground=W_BGCOL)
+scale.pack(anchor=CENTER, fill=X)
+k_value.set(60)
+
+# confidence factor selection fram and layout
+c_frame = Frame(config_frame, bg=W_BGCOL)
+c_frame.place(relx=0.55, rely=0.25, relheight=0.5, relwidth=0.2)
+
+label = Label(c_frame, text='Confidence Factor', bg=W_BGCOL, fg=W_FGCOL)
+label.pack(anchor=CENTER)
+
+confidence_factor = DoubleVar()
+scale = Scale(c_frame, variable=confidence_factor, orient=HORIZONTAL, resolution=0.1, from_=0, to=1, bg=W_BGCOL, fg=W_FGCOL, highlightbackground=W_BGCOL)
+scale.pack(anchor=CENTER, fill=X)
+confidence_factor.set(0.2)
+
+# calculate button
+cal_frame = Frame(config_frame, bg=W_BGCOL)
+cal_frame.place(relx=0.80, rely=0.1, relheight=0.8, relwidth=0.15)
+
+def change_search_btn_name():
+    calculate_btn.configure(text ="Preprocess Data")
+
+# used down below
+def wrapper():
+    search_btn.configure(state=NORMAL)
+    l.calculate(DIR, algorithm.get() == 2, k_value.get())
+    calculate_btn.configure(text='Data Processed!')
+
+    now = datetime.now()
+    run_at = now + timedelta(0, 3)
+    delay = (run_at - now).total_seconds()
+    threading.Timer(delay, change_search_btn_name).start()
+
+calculate_btn = Button(cal_frame, text ="Preprocess Data", relief=RAISED, borderwidth=0, command=wrapper)
+calculate_btn.pack(side=LEFT, fill=X)
+
+####################### loads layout #######################
+
+# analizes and saves images and bla
+def analize_images():
+
+    # get directory path
+    path = Filedialog.askdirectory(initialdir=os.getcwd(), title="Select a Folder or File")
+    if not path:
+        return
+
+    # get all images paths (names)
+    types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+    images = []
+    for t in types:
+        images.extend(glob.glob(path + t))
+
+    # do only when images is not empty
+    if (len(images) == 0):
+        return
+
+    # forget button and load image label
+    load_btn.place_forget()
+
+    image_label = Label(face_frame)
+    image_label.pack(side=TOP)
+
+    image_ety_var = StringVar()
+    image_entry = Entry(face_frame, textvariable=image_ety_var)
+    image_entry.place(anchor=W, relx=0, rely=0.915, relwidth=0.7, relheight=0.07)
+
+    image_btn_var = IntVar()
+    image_btn = Button(face_frame, text='Save Face', command=lambda: image_btn_var.set(1))
+    image_btn.place(anchor=SE, relx=1, rely=.90, relwidth=0.25, relheight=0.07)
+
+    image_btn_stop = Button(face_frame, text='Quit Loading', command=lambda: image_btn_var.set(2))
+    image_btn_stop.place(anchor=SE, relx=1, rely=1, relwidth=0.25, relheight=0.07)
+
+    # calculate max resolution posible for image
+    res = int(min(face_frame.winfo_height(), face_frame.winfo_width()) * 0.8)
+
+    for image in images:
+        faces = l.extract_face(DIR, image, confidence_factor.get())
+
+        # after extract get each face weait for button and save
+        for face in faces:
+            load_img = ImageTk.PhotoImage(Image.fromarray(face).resize((res,res),1))
+            image_label.config(image=load_img)
+            image_btn.wait_variable(image_btn_var)
+            
+            if (image_btn_var.get() == 2):
+                break
+
+            if (len(image_ety_var.get()) > 0):
+                l.save_face(face, image_ety_var.get(), DIR)
+                search_btn.configure(state=DISABLED)
+                image_ety_var.set('')
+        
+        if (image_btn_var.get() == 2):
+            break
+
+    # when no images or quit loading
+    image_label.destroy()
+    image_btn.destroy()
+    image_btn_stop.destroy()
+    image_entry.destroy()
+    load_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
+face_frame = Frame(load_frame, bg=W_BGCOL)
+face_frame.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.9)
+
+load_btn = Button(face_frame, text='Select Image Folder...', command=analize_images)
+load_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
-
-
-
-
-
-
-
-
-# # Retailer
-# retailer_text = StringVar()
-# retailer_label = Label(app, text='Retailer', font=('bold', 14))
-# retailer_label.grid(row=1, column=0, sticky=W)
-# retailer_entry = Entry(app, textvariable=retailer_text)
-# retailer_entry.grid(row=1, column=1)
-
-# # Price
-# price_text = StringVar()
-# price_label = Label(app, text='Price', font=('bold', 14))
-# price_label.grid(row=1, column=2, sticky=W)
-# price_entry = Entry(app, textvariable=price_text)
-# price_entry.grid(row=1, column=3)
-
-#SCROLL
-# # Parts List (Listbox)
-# parts_list = Listbox(app, height=16, width=50)
-# parts_list.grid(row=3, column=0, columnspan=3, rowspan=6, pady=20, padx=20)
-
-# # Create scrollbar
-# scrollbar = Scrollbar(app)
-# scrollbar.grid(row=3, column=3)
-
-# # Set scroll to listbox
-# parts_list.configure(yscrollcommand=scrollbar.set)
-# scrollbar.configure(command=parts_list.yview)
-
-# # Bind select
-# parts_list.bind('<<ListboxSelect>>', select_item)
-
-
-
-# Buttons
-# add_btn = Button(app, text='Add Part', width=12, command=add_item)
-# add_btn.grid(row=2, column=0, pady=20)
-
-# remove_btn = Button(app, text='Remove Part', width=12, command=remove_item)
-# remove_btn.grid(row=2, column=1)
-
-# update_btn = Button(app, text='Update Part', width=12, command=update_item)
-# update_btn.grid(row=2, column=2)
-
-# clear_btn = Button(app, text='Clear Input', width=12, command=clear_text)
-# clear_btn.grid(row=2, column=3)
-
-
-
-app.title('Face Recognition - Probeta Technologies')
-#app['background']='#DBF3FA'
-app.geometry('800x800')
-
-# Populate data
-#populate_list()
-
-# Start program
-app.mainloop()
-
-
-# To create an executable, install pyinstaller and run
-# '''
-# pyinstaller --onefile --add-binary='/System/Library/Frameworks/Tk.framework/Tk':'tk' --add-binary='/System/Library/Frameworks/Tcl.framework/Tcl':'tcl' part_manager.py
-# '''
-
-#---------------------# FRONT END #---------------------#
+root.mainloop()
