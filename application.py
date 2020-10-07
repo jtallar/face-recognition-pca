@@ -64,12 +64,12 @@ def search_coincidences(face):
     image_btn.place(anchor=S, relx=0.5, rely=1)
 
     # search for coincidences
-    (f, name, err) = l.search_image(face, DIR, algorithm.get() == 2)
+    (f, name, prob) = l.search_image(face, DIR, algorithm.get() == 2)
 
     # prints results
     match_img = ImageTk.PhotoImage(Image.fromarray(f).resize((res,res),1))
     out_image_label.config(image=match_img)
-    result_label.configure(text='Name: {} Error: {}'.format(name, err))
+    result_label.configure(text='Name: {} Probability: {}'.format(name, prob))
     result_label.place(anchor=S, relx=0.5, rely=0.85)
 
 
@@ -82,6 +82,25 @@ def search_coincidences(face):
     image_btn.destroy()
     search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
+# analizes a single image and selects only one face
+def analize_directory():
+    # ask for image path
+    path = Filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+    if not path:
+        return
+    
+    types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+    list_of_items = []
+    for t in types:
+        list_of_items.extend(glob.glob(path + t))
+
+    for file in list_of_items:
+        faces = l.extract_face(DIR, file, confidence_factor.get())
+        if (len(faces) != 0):
+            print(file)
+            for face in faces:
+                (f, name, prob) = l.search_image(face, DIR, algorithm.get() == 2)
+                print(name, prob)
 
 # analizes a single image and selects only one face
 def analize_single_image():
@@ -139,6 +158,7 @@ results_frame = Frame(search_frame, bg=W_BGCOL)
 results_frame.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.9)
 
 search_btn = Button(search_frame, text='Select Image ...', command=analize_single_image)
+# search_btn = Button(search_frame, text='Select Image ...', command=analize_directory)
 search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
@@ -152,15 +172,61 @@ def deactivate_search():
             time = file_time
     return time < os.path.getmtime(os.path.join(DIR, 'eigenvector.npy'))
 
+
+# def open_directory_recog():
+#     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+#     if path:
+#         #this is a list with all the images' paths.
+#         types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+#         list_of_items = []
+#         for t in types:
+#             list_of_items.extend(glob.glob(path + t))
+        
+#         # list_of_items = glob.glob(path + '/*.jpeg')
+#         for file in list_of_items:
+#             #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
+
+#             # get faces
+#             faces = l.extract_face(args['path'], file, args['confidence'])
+
+#             print(file)
+#             # save faces
+#             for face in faces:
+#                 l.show_face(face)
+#                 #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+#                 name = popupresults(face)
+
+
+# def open_directory():
+#     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
+#     if path:
+#         #this is a list with all the images' paths.
+#         types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+#         list_of_items = []
+#         for t in types:
+#             list_of_items.extend(glob.glob(path + t))
+        
+#         # list_of_items = glob.glob(path + '/*.jpeg')
+#         for file in list_of_items:
+#             #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
+
+#             # get faces
+#             faces = l.extract_face(args['path'], file, args['confidence'])
+
+#             # save faces
+#             for face in faces:
+#                 #l.show_face(face)
+#                 #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
+#                 name = popupmessage(face)
+#                 l.save_face(face, name.get(), args['path'])
+
+#         l.process_data(args['path'], args['nval'], args['kpca'])
+
 if deactivate_search():  
     search_btn.configure(state=DISABLED)
-
-
 ####################### configurations layout #######################
-
 # algorithm selection frame and layout
 algorithm = IntVar()
-
 alg_frame = Frame(config_frame, bg=W_BGCOL)
 alg_frame.place(relx=0.05, rely=0.2, relheight=0.8, relwidth=0.2)
 
@@ -182,9 +248,9 @@ label = Label(k_frame, text='K Value', bg=W_BGCOL, fg=W_FGCOL)
 label.pack(anchor=CENTER)
 
 k_value = IntVar()
-scale = Scale(k_frame, variable = k_value, resolution=1, orient=HORIZONTAL, from_=0, to=50, bg=W_BGCOL, fg=W_FGCOL, highlightbackground=W_BGCOL)
+scale = Scale(k_frame, variable = k_value, resolution=1, orient=HORIZONTAL, from_=0, to=100, bg=W_BGCOL, fg=W_FGCOL, highlightbackground=W_BGCOL)
 scale.pack(anchor=CENTER, fill=X)
-k_value.set(10)
+k_value.set(30)
 
 # confidence factor selection fram and layout
 c_frame = Frame(config_frame, bg=W_BGCOL)
@@ -219,7 +285,6 @@ def wrapper():
 calculate_btn = Button(cal_frame, text ="Preprocess Data", relief=RAISED, borderwidth=0, command=wrapper)
 calculate_btn.pack(side=LEFT, fill=X)
 
-
 ####################### loads layout #######################
 
 # analizes and saves images and bla
@@ -231,7 +296,10 @@ def analize_images():
         return
 
     # get all images paths (names)
-    images = glob.glob(path + '/*.jp*g')
+    types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
+    images = []
+    for t in types:
+        images.extend(glob.glob(path + t))
 
     # do only when images is not empty
     if (len(images) == 0):

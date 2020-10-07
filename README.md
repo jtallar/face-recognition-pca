@@ -17,6 +17,7 @@ sudo apt-get install python3-pil python3-pil.imagetk
 pip3 install Pillow 
 pip3 install numpy
 pip3 install opencv-python
+pip3 install tensorflow
 
 # run the app
 python3 application.py

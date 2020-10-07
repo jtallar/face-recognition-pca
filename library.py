@@ -5,8 +5,9 @@ import numpy as np
 import cv2
 import os
 import glob
-import sympy
-import test as git
+import math
+import tensorflow as tf
+from tensorflow import keras
 
 # given a a base dir for the model and the image returns
 # list of matrix. Each matrix is a face
@@ -105,7 +106,7 @@ def create_A(dir):
 # Kernel function used to create kernel matrix
 # (X^T * Y + 1) ^ p
 def kernel_func(x, y):
-    p = 2
+    p = 1
     return (np.dot(np.transpose(x), y) + 1) ** p
 
 # creates the K matrix for kpca
@@ -124,7 +125,6 @@ def create_K(A):
 
 # calculates the eigenvalues and eigenvectos given a matrix
 # returns touple (u, s), being u eigenvectors and s the eigenvalues
-# TODO to be replaced with our function
 def automatic_eigen(a):
     u, s, vh = np.linalg.svd(a, full_matrices=True)
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
@@ -133,9 +133,12 @@ def automatic_eigen(a):
 # calculates the eigenvalues and eigenvectors for the covariance matrix in pca
 # transforming the matrix eigen to the covariance eigen
 def calculate_pca_eigen(a, dir, n):
-    # Automatic eigen
     (u, s) = manual_eigen(np.dot(np.transpose(a), a))
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
+
+    # s = np.asarray(s)
+    # (u2, s2) = automatic_eigen(np.dot(np.transpose(a), a))
+    # print("\nDif\n", abs(u2) - abs(u), abs(s2) - abs(s))
 
     u = np.dot(a, u)
     for i in range(0, len(u[0])):
@@ -165,32 +168,21 @@ def calculate_pca_eigen(a, dir, n):
 # calculates the eigenvalues and eigenvectors for the K matrix in kpca
 # returns eigenvalues and eigenvectors of the K matrix, not the Covariance matrix
 def calculate_kpca_eigen(k, dir, n):
-    # Automatic eigen
     (u, s) = manual_eigen(k)
     # u --> eigenvectors in M x M matrix, s --> eigenvalues in vector
 
-    # FIXME: UNCOMMENT TO TEST K VALUES
-    # cov = np.dot(a, np.transpose(a))
-    # aux = np.dot(u, (np.diag(s) ** 0.5))
-    # for i in range(0, len(u[0])):
-    #     b = np.dot(aux[:,0:i], np.transpose(aux[:,0:i]))
-    #     for j in range(0, len(u[0])):
-    #         print("Con los primeros ", i + 1, " autovectores, en el param ", j, " hay % info ", b[j,j]/cov[j,j])
-
-    # TODO: VER COMO DA SIN ESTO, porque me achica mucho los autovectores
-    # for i in range(0, len(u[0])):
-    #     u[:,i] = u[:,i] / (np.sqrt(abs(s[i])))
+    for i in range(0, len(u[0])):
+        u[:,i] = u[:,i] / (np.linalg.norm(u[:,i], 2) * (np.sqrt(abs(s[i]))))
 
     u = u[:,:n]                                                        # get first n columns
     s = s[:n]
 
     # saves to files the eigen values and vectors
     np.save(os.path.join(dir, 'eigenvector'), u)
-    np.save(os.path.join(dir, 'eigenvalues'), s / len(k)) # Save eigenvalues of Covariance
+    np.save(os.path.join(dir, 'eigenvalues'), np.asarray(s) / len(k)) # Save eigenvalues of Covariance
 
     return (u, s)
 
-# TODO: VER QUE ONDA ESE tol
 def rref(B, tol=200000):
   A = B.copy()
   rows, cols = A.shape
@@ -237,7 +229,7 @@ def rref(B, tol=200000):
 # algorithm that calculates eigenvalues and eigenvectors given matrix a
 # return eigenvalues and k eigenvectors 
 def manual_eigen(a):
-    s = np.roots(np.poly(a))                    # roots of characteristic polynom
+    s = sorted_eigen_values(a)
     N = len(a)                                  # set N as matrix size
     vector = []                    # initialize result vectors matrix
     for i in range(N):
@@ -255,6 +247,43 @@ def manual_eigen(a):
     
     vector = np.transpose(vector)
     return (vector, s)
+
+ITERATION_PRECISION = 10 ** -8
+
+# Given a diagonalizable matrix, it returns a list with its eigenvalues in descending absolute value
+def sorted_eigen_values(A):
+    n = len(A)
+    Q, R = householder_QR(A)
+    matrix = np.copy(A)
+    eigen_values = np.diagonal(matrix)
+    for k in range(300):
+        Q, R = householder_QR(matrix)
+        matrix = R.dot(Q)
+        new_eigen_values = np.diagonal(matrix)
+        if np.linalg.norm(np.subtract(new_eigen_values,eigen_values)) < ITERATION_PRECISION:
+            break
+        eigen_values = new_eigen_values
+
+    return sorted(eigen_values, key=abs)[::-1]
+
+# Householder QR method as described here:
+# https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
+def householder_QR(A):
+    m = len(A)
+    n = len(A[0])
+    Q = np.identity(m)
+    R = np.copy(A)
+    for j in range(n):
+        normx = np.linalg.norm(R[j:m,j])
+        s = - np.sign(R[j,j])
+        u1 = R[j,j] - s * normx
+        w = R[j:m, j].reshape((-1,1)) / u1
+        w[0] = 1
+        tau = -s * u1 / normx
+        R[j:m, :] = R[j:m, :] - (tau * w) * np.dot(w.reshape((1,-1)),R[j:m,:])
+        Q[:, j:n] = Q[:,j:n] - (Q[:,j:m].dot(w)).dot(tau*w.transpose())
+
+    return Q, R
 
 # fi is an N^2 vector, Fi = ri - Y
 # eigenvectors is an N^2 x K, the K best eigenvectors
@@ -369,8 +398,8 @@ def calculate(path, kpca, nval):
     A = create_A(path)
 
     # calculate and saves eigen values and vectors
-    # (u, v) = l.calculate_pca_eigen(A, path, nval)
-    # (u2, v2) = l.calculate_pca_eigen_auto(A, path, nval)
+    # (u, v) = calculate_pca_eigen(A, path, nval)
+    # (u2, v2) = calculate_pca_eigen_auto(A, path, nval)
     # print("\nManual:\n", u, v)
     # print("\Auto:\n", u2, v2)
     # print("\nDif\n", abs(u2) - abs(u), abs(v2) - abs(v))
@@ -390,6 +419,65 @@ def calculate(path, kpca, nval):
         # creates and saves the ohm space
         create_ohm_space(K, u, path, True)
 
+# create neural network model with the eigenfaces, their labels
+# and the number of distinct people
+def create_nn_model(eigenfaces, face_labels, people_count):
+    eigenfaces = keras.utils.normalize(eigenfaces, axis=1)
+
+    neurons1 = math.ceil(eigenfaces.shape[1] * 2 / 3 + people_count)
+    neurons2 = math.ceil(neurons1 / 2)
+
+    model = keras.models.Sequential()
+    model.add(keras.layers.Dense(neurons1, activation=tf.nn.relu))
+    model.add(keras.layers.Dense(neurons2, activation=tf.nn.relu))
+    model.add(keras.layers.Dense(people_count, activation=tf.nn.softmax))
+
+    model.compile(optimizer = keras.optimizers.Adam(lr=0.0001),
+              loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
+    model.fit(eigenfaces, face_labels, epochs=1500, verbose=0)
+
+    return model
+
+# build neural network and get max prediction from an input
+def get_max_prediction(eigenfaces, face_labels, input, people_count):
+    # A partir de las eigenfaces y una imagen de entrada, determinar a qué persona pertenece la imagen de entrada
+
+    # (eigenfaces, face_labels) 
+    # (test_image, test_label)
+
+    input = keras.utils.normalize(np.expand_dims(input,0), axis=1)
+
+    probability_model = create_nn_model(eigenfaces, face_labels, people_count)
+    
+    predictions = probability_model.predict(input)
+    
+    max_prob = np.argmax(predictions[0])
+
+    return (max_prob, predictions[0][max_prob])
+
+# classify an ohm_img using the saved ohm-space
+def classify(ohm_img, dir, threshold=float('Inf')):
+
+    # load ohm space and eigen values
+    ohm_space = np.load(os.path.join(dir, 'ohm-space.npy'))
+
+    label_list = np.load(os.path.join(dir, 'index.npy'))
+
+    # extract dirname from label_list
+    index = 0
+    for i in label_list:
+        label_list[index] = os.path.dirname(i)
+        index += 1
+    
+    unique_labels = np.unique(label_list)
+    m = np.zeros(len(label_list))
+    for i in range(0, len(label_list)):
+        m[i] = np.where(unique_labels == label_list[i])[0]
+    
+    (index, prob) = get_max_prediction(np.transpose(ohm_space), m, ohm_img, len(unique_labels))
+    return (unique_labels[index], prob)
 
 # searches and returns face, name and error
 # the face matrix to search
@@ -398,12 +486,10 @@ def search_image(face, path, kpca, threshold=float('Inf')):
     # recognize the ohm image
     ohm_img = get_ohm_image(face, path, kpca)
 
-    # searches for the index of the matching face
-    (i, err) = face_space_distance(ohm_img, path, threshold)
+    # gets the correspondig path of the matching face
+    (match_path, prob) = classify(ohm_img, path, threshold)
 
-    # gets the corresponding path given the index
-    match_path = get_matching_path(i, path)
-    similar_face = np.load(match_path)
-    (root, _) = os.path.split(match_path)
+    # get a similar face, first npy from path
+    similar_face = np.load(match_path + "/0.npy")
 
-    return (np.reshape(similar_face, (50,50)), os.path.basename(root), err)
+    return (np.reshape(similar_face, (50,50)), os.path.basename(match_path), prob)
