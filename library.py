@@ -402,8 +402,7 @@ def get_matching_path(index, dir):
 # make all calculations por pca or kpca and save ohmspace
 # path - path to data
 # nval - number of eigenvalues to take from M
-# kpca - if true, use kpca. Optional
-def process_data(path, nval=6, kpca=False):
+def calculate(path, kpca, nval):
     # create the matrix A from the data
     A = create_A(path)
 
@@ -505,3 +504,20 @@ def classify(ohm_img, dir, threshold=float('Inf')):
     return (unique_labels[index], prob)
 
     
+
+# searches and returns face, name and error
+# the face matrix to search
+# path the path to database
+def search_image(face, path, kpca, threshold=float('Inf')):
+    # recognize the ohm image
+    ohm_img = get_ohm_image(face, path, kpca)
+
+    # searches for the index of the matching face
+    (i, err) = face_space_distance(ohm_img, path, threshold)
+
+    # gets the corresponding path given the index
+    match_path = get_matching_path(i, path)
+    similar_face = np.load(match_path)
+    (root, _) = os.path.split(match_path)
+
+    return (np.reshape(similar_face, (50,50)), os.path.basename(root), err)
