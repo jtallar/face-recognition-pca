@@ -164,63 +164,16 @@ search_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 # checks if calculated data is actualized
 def deactivate_search():
+    eigenvector_file = os.path.join(DIR, 'eigenvector.npy')
+    if not os.path.exists(eigenvector_file):
+        return True
     time = 0
     files = glob.glob(DIR + '/persons/*/*.npy')
     for f in files:
         file_time = os.path.getmtime(f)
         if  file_time > time:
             time = file_time
-    return time < os.path.getmtime(os.path.join(DIR, 'eigenvector.npy'))
-
-
-# def open_directory_recog():
-#     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
-#     if path:
-#         #this is a list with all the images' paths.
-#         types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
-#         list_of_items = []
-#         for t in types:
-#             list_of_items.extend(glob.glob(path + t))
-        
-#         # list_of_items = glob.glob(path + '/*.jpeg')
-#         for file in list_of_items:
-#             #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
-
-#             # get faces
-#             faces = l.extract_face(args['path'], file, args['confidence'])
-
-#             print(file)
-#             # save faces
-#             for face in faces:
-#                 l.show_face(face)
-#                 #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
-#                 name = popupresults(face)
-
-
-# def open_directory():
-#     path = filedialog.askdirectory( initialdir=os.getcwd(), title="Select a File")
-#     if path:
-#         #this is a list with all the images' paths.
-#         types = ('/*.png', '/*.jpg', '/*.jpeg') # the tuple of file types
-#         list_of_items = []
-#         for t in types:
-#             list_of_items.extend(glob.glob(path + t))
-        
-#         # list_of_items = glob.glob(path + '/*.jpeg')
-#         for file in list_of_items:
-#             #Hasta aca tenemos un ciclo por todas las imagenes que el usuario quiere subir
-
-#             # get faces
-#             faces = l.extract_face(args['path'], file, args['confidence'])
-
-#             # save faces
-#             for face in faces:
-#                 #l.show_face(face)
-#                 #Popeamos una ventanita que le pida nombre para la imagen y la meta en la scroll list.
-#                 name = popupmessage(face)
-#                 l.save_face(face, name.get(), args['path'])
-
-#         l.process_data(args['path'], args['nval'], args['kpca'])
+    return time < os.path.getmtime(eigenvector_file)
 
 if deactivate_search():  
     search_btn.configure(state=DISABLED)
